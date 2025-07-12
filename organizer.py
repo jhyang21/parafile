@@ -90,7 +90,16 @@ class DocumentHandler(FileSystemEventHandler):
 
 
 def start_observer(config):
-    watched_folder = Path(config["watched_folder"])
+    watched_folder_path = config["watched_folder"]
+    
+    # Check if folder is selected
+    if watched_folder_path == "SELECT FOLDER":
+        logger.error("No folder selected for monitoring. Please run the GUI and select a folder first.")
+        print("ERROR: No folder selected for monitoring.")
+        print("Please run 'python gui.py' and select a folder to monitor.")
+        return
+    
+    watched_folder = Path(watched_folder_path)
     if not watched_folder.exists():
         logger.warning(f"Watched folder does not exist: {watched_folder}. Creating it.")
         watched_folder.mkdir(parents=True)

@@ -69,6 +69,10 @@ class ConfigGUI(tk.Tk):
 
         # Save button
         tk.Button(self, text="Save Changes", command=self.save_changes).pack(pady=10)
+        
+        # Check if folder needs to be selected (after GUI is created)
+        if self.config_data["watched_folder"] == "SELECT FOLDER":
+            self.prompt_folder_selection()
 
     # Folder browse
     def browse_folder(self):
@@ -77,6 +81,15 @@ class ConfigGUI(tk.Tk):
             self.folder_var.set(folder_selected)
             self.config_data["watched_folder"] = folder_selected
             save_config(self.config_data)
+    
+    def prompt_folder_selection(self):
+        """Prompt user to select a folder if none is selected."""
+        result = messagebox.askyesno(
+            "Select Folder", 
+            "No folder is currently selected for monitoring. Would you like to select a folder now?"
+        )
+        if result:
+            self.browse_folder()
 
     # Category operations
     def refresh_categories(self):

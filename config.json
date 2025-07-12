@@ -1,5 +1,5 @@
 {
-  "watched_folder": "${HOME}/Downloads",
+  "watched_folder": "SELECT FOLDER",
   "categories": [
     {
       "name": "Invoices and Receipts",
@@ -26,4 +26,4 @@
       "description": "The type of document such as invoice, report, proposal, etc."
     }
   ]
-} 
+}
