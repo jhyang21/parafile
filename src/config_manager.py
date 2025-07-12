@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Any, Dict
 
 
-CONFIG_FILE = Path(__file__).resolve().parent / "config.json"
+CONFIG_FILE = Path(__file__).resolve().parent.parent / "config.json"
 
 # Default structure used when config.json does not yet exist.
 DEFAULT_CONFIG = {

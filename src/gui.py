@@ -239,6 +239,11 @@ class ConfigGUI(tk.Tk):
         messagebox.showinfo("Config Saved", "Configuration saved successfully.")
 
 
-if __name__ == "__main__":
+def main():
+    """Main entry point for the GUI application."""
     app = ConfigGUI()
-    app.mainloop() 
+    app.mainloop()
+
+
+if __name__ == "__main__":
+    main() 
