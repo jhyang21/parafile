@@ -70,6 +70,8 @@ class ConfigGUI(tk.Tk):
         folder_selected = filedialog.askdirectory()
         if folder_selected:
             self.folder_var.set(folder_selected)
+            self.config_data["watched_folder"] = folder_selected
+            save_config(self.config_data)
 
     # Category operations
     def refresh_categories(self):
@@ -82,6 +84,7 @@ class ConfigGUI(tk.Tk):
         if cat:
             self.config_data["categories"].append(cat)
             self.refresh_categories()
+            save_config(self.config_data)
 
     def edit_category(self):
         index = self.cat_listbox.curselection()
@@ -94,6 +97,7 @@ class ConfigGUI(tk.Tk):
         if updated:
             self.config_data["categories"][idx] = updated
             self.refresh_categories()
+            save_config(self.config_data)
 
     def delete_category(self):
         index = self.cat_listbox.curselection()
@@ -102,6 +106,7 @@ class ConfigGUI(tk.Tk):
         idx = index[0]
         del self.config_data["categories"][idx]
         self.refresh_categories()
+        save_config(self.config_data)
 
     def category_dialog(self, cat: Dict[str, str] | None = None) -> Dict[str, str] | None:
         dialog = tk.Toplevel(self)
@@ -145,6 +150,7 @@ class ConfigGUI(tk.Tk):
         if var:
             self.config_data.setdefault("variables", []).append(var)
             self.refresh_variables()
+            save_config(self.config_data)
 
     def edit_variable(self):
         index = self.var_listbox.curselection()
@@ -157,6 +163,7 @@ class ConfigGUI(tk.Tk):
         if updated:
             self.config_data["variables"][idx] = updated
             self.refresh_variables()
+            save_config(self.config_data)
 
     def delete_variable(self):
         index = self.var_listbox.curselection()
@@ -165,6 +172,7 @@ class ConfigGUI(tk.Tk):
         idx = index[0]
         del self.config_data["variables"][idx]
         self.refresh_variables()
+        save_config(self.config_data)
 
     def variable_dialog(self, var: Dict[str, str] | None = None) -> Dict[str, str] | None:
         dialog = tk.Toplevel(self)
