@@ -15,7 +15,7 @@ class ConfigGUI(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("File Organizer Settings")
-        self.geometry("600x400")
+        self.geometry("600x500")
 
         self.config_data = load_config()
 
@@ -29,30 +29,35 @@ class ConfigGUI(tk.Tk):
         self.folder_entry.pack(side=tk.LEFT, padx=5)
         tk.Button(folder_frame, text="Browse", command=self.browse_folder).pack(side=tk.LEFT)
 
-        # Categories list section
-        list_frame = tk.Frame(self)
-        list_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+        # Main content frame
+        main_frame = tk.Frame(self)
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
-        tk.Label(list_frame, text="Categories:").pack(anchor=tk.W)
-        self.cat_listbox = tk.Listbox(list_frame, height=8)
+        # Categories list section
+        cat_section = tk.Frame(main_frame)
+        cat_section.pack(fill=tk.BOTH, expand=True, pady=5)
+
+        tk.Label(cat_section, text="Categories:").pack(anchor=tk.W)
+        self.cat_listbox = tk.Listbox(cat_section, height=6)
         self.cat_listbox.pack(fill=tk.BOTH, expand=True)
 
         # Category buttons
-        cat_btn_frame = tk.Frame(self)
+        cat_btn_frame = tk.Frame(cat_section)
         cat_btn_frame.pack(pady=5)
         tk.Button(cat_btn_frame, text="Add", command=self.add_category).pack(side=tk.LEFT, padx=5)
         tk.Button(cat_btn_frame, text="Edit", command=self.edit_category).pack(side=tk.LEFT, padx=5)
         tk.Button(cat_btn_frame, text="Delete", command=self.delete_category).pack(side=tk.LEFT, padx=5)
 
         # Variables list section
-        var_frame = tk.Frame(self)
-        var_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+        var_section = tk.Frame(main_frame)
+        var_section.pack(fill=tk.BOTH, expand=True, pady=5)
 
-        tk.Label(var_frame, text="Variables:").pack(anchor=tk.W)
-        self.var_listbox = tk.Listbox(var_frame, height=8)
+        tk.Label(var_section, text="Variables:").pack(anchor=tk.W)
+        self.var_listbox = tk.Listbox(var_section, height=6)
         self.var_listbox.pack(fill=tk.BOTH, expand=True)
 
-        var_btn_frame = tk.Frame(self)
+        # Variable buttons
+        var_btn_frame = tk.Frame(var_section)
         var_btn_frame.pack(pady=5)
         tk.Button(var_btn_frame, text="Add", command=self.add_variable).pack(side=tk.LEFT, padx=5)
         tk.Button(var_btn_frame, text="Edit", command=self.edit_variable).pack(side=tk.LEFT, padx=5)
@@ -102,6 +107,7 @@ class ConfigGUI(tk.Tk):
     def delete_category(self):
         index = self.cat_listbox.curselection()
         if not index:
+            messagebox.showinfo("Info", "Select a category to delete.")
             return
         idx = index[0]
         del self.config_data["categories"][idx]
@@ -168,6 +174,7 @@ class ConfigGUI(tk.Tk):
     def delete_variable(self):
         index = self.var_listbox.curselection()
         if not index:
+            messagebox.showinfo("Info", "Select a variable to delete.")
             return
         idx = index[0]
         del self.config_data["variables"][idx]
