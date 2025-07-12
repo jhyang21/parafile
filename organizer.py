@@ -44,33 +44,48 @@ class DocumentHandler(FileSystemEventHandler):
         self.process_file(filepath)
 
     def process_file(self, filepath: Path):
-        try:
-            if filepath.suffix.lower() == ".pdf":
-                document_text = extract_text_from_pdf(filepath)
-            else:
-                document_text = extract_text_from_docx(filepath)
+        # Retry mechanism for file access issues
+        max_retries = 3
+        retry_delay = 2  # seconds
+        
+        for attempt in range(max_retries):
+            try:
+                if filepath.suffix.lower() == ".pdf":
+                    document_text = extract_text_from_pdf(filepath)
+                else:
+                    document_text = extract_text_from_docx(filepath)
 
-            category, suggested_name = get_ai_suggestion(document_text, self.config["categories"], self.config.get("variables", []))
-            logger.info(f"AI suggestion: category='{category}', name='{suggested_name}'")
+                category, suggested_name = get_ai_suggestion(document_text, self.config["categories"], self.config.get("variables", []))
+                logger.info(f"AI suggestion: category='{category}', name='{suggested_name}'")
 
-            # Determine target folder and full destination path
-            base_folder = Path(self.config["watched_folder"])
-            category_folder = ensure_category_folder(base_folder, category)
+                # Determine target folder and full destination path
+                base_folder = Path(self.config["watched_folder"])
+                category_folder = ensure_category_folder(base_folder, category)
 
-            # Ensure filename has the same extension
-            suggested_filename = f"{suggested_name}{filepath.suffix.lower()}"
-            dest_path = category_folder / suggested_filename
+                # Ensure filename has the same extension
+                suggested_filename = f"{suggested_name}{filepath.suffix.lower()}"
+                dest_path = category_folder / suggested_filename
 
-            # Resolve name conflicts by appending counter
-            counter = 1
-            while dest_path.exists():
-                dest_path = category_folder / f"{suggested_name}_{counter}{filepath.suffix.lower()}"
-                counter += 1
+                # Resolve name conflicts by appending counter
+                counter = 1
+                while dest_path.exists():
+                    dest_path = category_folder / f"{suggested_name}_{counter}{filepath.suffix.lower()}"
+                    counter += 1
 
-            shutil.move(str(filepath), dest_path)
-            logger.info(f"Moved '{filepath.name}' to '{dest_path.relative_to(base_folder)}'")
-        except Exception as exc:
-            logger.error(f"Failed to process file '{filepath}': {exc}")
+                shutil.move(str(filepath), dest_path)
+                logger.info(f"Moved '{filepath.name}' to '{dest_path.relative_to(base_folder)}'")
+                return  # Success, exit retry loop
+                
+            except PermissionError as exc:
+                if attempt < max_retries - 1:
+                    logger.warning(f"Permission denied for '{filepath.name}' (attempt {attempt + 1}/{max_retries}). Retrying in {retry_delay} seconds...")
+                    time.sleep(retry_delay)
+                    continue
+                else:
+                    logger.error(f"Failed to process file '{filepath}' after {max_retries} attempts: {exc}")
+            except Exception as exc:
+                logger.error(f"Failed to process file '{filepath}': {exc}")
+                break  # Don't retry for non-permission errors
 
 
 
