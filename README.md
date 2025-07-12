@@ -1,6 +1,6 @@
-# AI-Powered File Organizer
+# AI-Powered File Renamer and Organizer
 
-Automatically organize PDF and Word documents in your Downloads folder using AI-powered categorization and smart renaming.
+Automatically rename and organize PDF and Word documents in your Downloads folder using AI-powered categorization and smart renaming.
 
 ## Overview
 
