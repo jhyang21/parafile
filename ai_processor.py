@@ -2,16 +2,16 @@ import json
 import os
 from typing import List, Dict, Tuple
 
-import openai
+from openai import OpenAI
 from dotenv import load_dotenv
 
 # Ensure .env values are loaded into environment
 load_dotenv()
 
+# Initialize OpenAI client
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
-
-if not openai.api_key:
+if not os.getenv("OPENAI_API_KEY"):
     raise EnvironmentError("OPENAI_API_KEY not set. Please configure your environment or .env file.")
 
 
@@ -56,8 +56,8 @@ def get_ai_suggestion(document_text: str, categories: List[Dict[str, str]], vari
     """
     prompt = _build_prompt(categories, variables, document_text)
 
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo-0613",
+    response = client.chat.completions.create(
+        model="gpt-4.1-2025-04-14",
         messages=[{"role": "user", "content": prompt}],
         max_tokens=256,
         temperature=0.2,
