@@ -1,29 +1,16 @@
 {
   "watched_folder": "SELECT FOLDER",
   "categories": [
-    {
-      "name": "Invoices and Receipts",
-      "naming_pattern": "{YYYY}-{MM}-{DD}_{vendor}_invoice",
-      "description": "Any document related to a purchase or service. This includes invoices, bills, receipts, and payment confirmations."
-    },
-    {
-      "name": "Project Documents",
-      "naming_pattern": "Project_{project_name}_{document_type}_{YYYY}-{MM}",
-      "description": "Documents related to work projects, such as status reports, project plans, meeting notes, or client proposals."
-    }
+      {
+          "name": "General",
+          "naming_pattern": "{original_name}",
+          "description": "Default category when no other rules match."
+      }
   ],
   "variables": [
-    {
-      "name": "vendor",
-      "description": "Name of the company or person that issued the invoice or receipt."
-    },
-    {
-      "name": "project_name",
-      "description": "The project identifier or name found within the document."
-    },
-    {
-      "name": "document_type",
-      "description": "The type of document such as invoice, report, proposal, etc."
-    }
+      {
+          "name": "original_name",
+          "description": "The original filename without extension."
+      }
   ]
 }
