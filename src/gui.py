@@ -9,15 +9,18 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, simpledialog
 
 from config_manager import load_config, save_config
+from organizer import start_observer
 
 
 class ConfigGUI(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("File Organizer Settings")
-        self.geometry("600x500")
+        self.geometry("600x600")
 
         self.config_data = load_config()
+        self.observer_thread = None
+        self.monitoring_active = False
 
         # Watched folder frame
         folder_frame = tk.Frame(self)
@@ -28,6 +31,17 @@ class ConfigGUI(tk.Tk):
         self.folder_entry = tk.Entry(folder_frame, textvariable=self.folder_var, width=50)
         self.folder_entry.pack(side=tk.LEFT, padx=5)
         tk.Button(folder_frame, text="Browse", command=self.browse_folder).pack(side=tk.LEFT)
+
+        # Monitoring control frame
+        monitor_frame = tk.Frame(self)
+        monitor_frame.pack(fill=tk.X, pady=10, padx=10)
+        
+        tk.Label(monitor_frame, text="Monitoring Status:").pack(side=tk.LEFT)
+        self.status_label = tk.Label(monitor_frame, text="Stopped", fg="red")
+        self.status_label.pack(side=tk.LEFT, padx=10)
+        
+        self.monitor_button = tk.Button(monitor_frame, text="Start Monitoring", command=self.toggle_monitoring, bg="green", fg="white")
+        self.monitor_button.pack(side=tk.LEFT, padx=10)
 
         # Main content frame
         main_frame = tk.Frame(self)
@@ -73,6 +87,93 @@ class ConfigGUI(tk.Tk):
         # Check if folder needs to be selected (after GUI is created)
         if self.config_data["watched_folder"] == "SELECT FOLDER":
             self.prompt_folder_selection()
+            
+        # Bind window close event to cleanup
+        self.protocol("WM_DELETE_WINDOW", self.on_closing)
+
+    def on_closing(self):
+        """Handle window closing - stop monitoring if active."""
+        if self.monitoring_active:
+            self.stop_monitoring()
+        self.destroy()
+
+    def toggle_monitoring(self):
+        """Toggle the monitoring on/off."""
+        if not self.monitoring_active:
+            self.start_monitoring()
+        else:
+            self.stop_monitoring()
+
+    def start_monitoring(self):
+        """Start the file monitoring in a separate thread."""
+        # Check if folder is selected
+        if self.config_data["watched_folder"] == "SELECT FOLDER":
+            messagebox.showwarning("No Folder Selected", 
+                                 "Please select a folder to monitor before starting.")
+            return
+        
+        # Check if folder exists
+        folder_path = Path(self.config_data["watched_folder"])
+        if not folder_path.exists():
+            result = messagebox.askyesno("Folder Not Found", 
+                                       f"The folder '{folder_path}' does not exist. Create it?")
+            if result:
+                folder_path.mkdir(parents=True, exist_ok=True)
+            else:
+                return
+        
+        # Start monitoring in a separate thread
+        self.observer_thread = threading.Thread(target=self.run_observer, daemon=True)
+        self.observer_thread.start()
+        
+        # Update UI
+        self.monitoring_active = True
+        self.status_label.config(text="Running", fg="green")
+        self.monitor_button.config(text="Stop Monitoring", bg="red")
+        
+        messagebox.showinfo("Monitoring Started", 
+                          f"File monitoring started for folder:\n{self.config_data['watched_folder']}")
+
+    def stop_monitoring(self):
+        """Stop the file monitoring."""
+        self.monitoring_active = False
+        
+        # Update UI
+        self.status_label.config(text="Stopped", fg="red")
+        self.monitor_button.config(text="Start Monitoring", bg="green")
+        
+        messagebox.showinfo("Monitoring Stopped", "File monitoring has been stopped.")
+
+    def run_observer(self):
+        """Run the file observer - this runs in a separate thread."""
+        try:
+            # Create a modified version of start_observer that can be stopped
+            from organizer import DocumentHandler
+            from watchdog.observers import Observer
+            
+            watched_folder = Path(self.config_data["watched_folder"])
+            event_handler = DocumentHandler(self.config_data)
+            observer = Observer()
+            observer.schedule(event_handler, str(watched_folder), recursive=False)
+            observer.start()
+            
+            # Keep running until monitoring is stopped
+            while self.monitoring_active:
+                observer.join(timeout=1)  # Check every second
+                
+            observer.stop()
+            observer.join()
+            
+        except Exception as e:
+            # Handle any errors and update UI on main thread
+            self.after(0, lambda: self.handle_monitoring_error(str(e)))
+
+    def handle_monitoring_error(self, error_message):
+        """Handle monitoring errors on the main thread."""
+        self.monitoring_active = False
+        self.status_label.config(text="Error", fg="red")
+        self.monitor_button.config(text="Start Monitoring", bg="green")
+        messagebox.showerror("Monitoring Error", f"An error occurred during monitoring:\n{error_message}")
 
     # Folder browse
     def browse_folder(self):
