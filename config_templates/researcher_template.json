@@ -1,0 +1,40 @@
+{
+  "watched_folder": "SELECT FOLDER",
+  "categories": [
+    {
+      "name": "Research Papers",
+      "naming_pattern": "{YYYY}_{first_author_last_name}_{short_title}",
+      "description": "Research articles, pre-prints, and conference papers. The pattern uses year of publication, the first author's last name, and a short title."
+    }
+  ],
+  "variables": [
+    {
+        "name": "first_author_first_name",
+        "description": "The first name of the first author of the paper."
+    },
+    {
+      "name": "first_author_last_name",
+      "description": "The last name of the first author of the paper."
+    },
+    {
+      "name": "short_title",
+      "description": "A few keywords from the paper's title to keep it short."
+    },
+    {
+        "name": "long_title",
+        "description": "The full title of the paper."
+    },
+    {
+        "name": "YYYY",
+        "description": "The year of publication of the paper."
+    },
+    {
+        "name": "MM",
+        "description": "The month of publication of the paper."
+    },
+    {
+        "name": "DD",
+        "description": "The day of publication of the paper."
+    }
+  ]
+} 
