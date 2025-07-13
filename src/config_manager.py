@@ -48,6 +48,30 @@ def load_config() -> Dict[str, Any]:
         if key not in data:
             data[key] = default_val
             updated = True
+    
+    # Ensure required "General" category exists
+    if "categories" in data:
+        has_general = any(cat.get("name") == "General" for cat in data["categories"])
+        if not has_general:
+            general_category = {
+                "name": "General",
+                "naming_pattern": "{original_name}",
+                "description": "Default category when no other rules match."
+            }
+            data["categories"].append(general_category)
+            updated = True
+    
+    # Ensure required "original_name" variable exists
+    if "variables" in data:
+        has_original_name = any(var.get("name") == "original_name" for var in data["variables"])
+        if not has_original_name:
+            original_name_var = {
+                "name": "original_name",
+                "description": "The original filename without extension."
+            }
+            data["variables"].append(original_name_var)
+            updated = True
+    
     if updated:
         save_config(data)
     return data
