@@ -111,6 +111,13 @@ class ConfigGUI(tk.Tk):
             return
         idx = index[0]
         current = self.config_data["categories"][idx]
+        
+        # Prevent editing the "General" category
+        if current["name"] == "General":
+            messagebox.showwarning("Protected Item", 
+                                 "The 'General' category cannot be edited as it's required for the application to function properly.")
+            return
+        
         updated = self.category_dialog(current)
         if updated:
             self.config_data["categories"][idx] = updated
@@ -123,6 +130,14 @@ class ConfigGUI(tk.Tk):
             messagebox.showinfo("Info", "Select a category to delete.")
             return
         idx = index[0]
+        current = self.config_data["categories"][idx]
+        
+        # Prevent deleting the "General" category
+        if current["name"] == "General":
+            messagebox.showwarning("Protected Item", 
+                                 "The 'General' category cannot be deleted as it's required for the application to function properly.")
+            return
+        
         del self.config_data["categories"][idx]
         self.refresh_categories()
         save_config(self.config_data)
@@ -178,6 +193,13 @@ class ConfigGUI(tk.Tk):
             return
         idx = index[0]
         current = self.config_data["variables"][idx]
+        
+        # Prevent editing the "original_name" variable
+        if current["name"] == "original_name":
+            messagebox.showwarning("Protected Item", 
+                                 "The 'original_name' variable cannot be edited as it's required for the application to function properly.")
+            return
+        
         updated = self.variable_dialog(current)
         if updated:
             self.config_data["variables"][idx] = updated
@@ -190,6 +212,14 @@ class ConfigGUI(tk.Tk):
             messagebox.showinfo("Info", "Select a variable to delete.")
             return
         idx = index[0]
+        current = self.config_data["variables"][idx]
+        
+        # Prevent deleting the "original_name" variable
+        if current["name"] == "original_name":
+            messagebox.showwarning("Protected Item", 
+                                 "The 'original_name' variable cannot be deleted as it's required for the application to function properly.")
+            return
+
         del self.config_data["variables"][idx]
         self.refresh_variables()
         save_config(self.config_data)
