@@ -14,7 +14,9 @@ from organizer import main as organizer_main
 
 def main():
     """Main entry point for the application."""
-    if len(sys.argv) > 1:
+    if len(sys.argv) == 1:
+        gui_main()
+    elif len(sys.argv) > 1:
         if sys.argv[1] == 'gui':
             gui_main()
         elif sys.argv[1] == 'monitor':
