@@ -1,7 +1,6 @@
 import json
 import subprocess
 import sys
-import threading
 from pathlib import Path
 from typing import Dict, List
 
@@ -9,7 +8,6 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, simpledialog
 
 from config_manager import load_config, save_config
-from organizer import start_observer
 
 
 class ConfigGUI(tk.Tk):
@@ -19,8 +17,7 @@ class ConfigGUI(tk.Tk):
         self.geometry("600x600")
 
         self.config_data = load_config()
-        self.observer_thread = None
-        self.monitoring_active = False
+        self.monitor_process: subprocess.Popen | None = None
 
         # Watched folder frame
         folder_frame = tk.Frame(self)
@@ -85,7 +82,7 @@ class ConfigGUI(tk.Tk):
         tk.Button(self, text="Save Changes", command=self.save_changes).pack(pady=10)
         
         # Check if folder needs to be selected (after GUI is created)
-        if self.config_data["watched_folder"] == "SELECT FOLDER":
+        if self.config_data["watched_folder"] == "SELECT FOLDER" or not self.config_data["watched_folder"]:
             self.prompt_folder_selection()
             
         # Bind window close event to cleanup
@@ -93,21 +90,22 @@ class ConfigGUI(tk.Tk):
 
     def on_closing(self):
         """Handle window closing - stop monitoring if active."""
-        if self.monitoring_active:
+        if self.monitor_process and self.monitor_process.poll() is None:
             self.stop_monitoring()
         self.destroy()
 
     def toggle_monitoring(self):
         """Toggle the monitoring on/off."""
-        if not self.monitoring_active:
+        is_running = self.monitor_process and self.monitor_process.poll() is None
+        if not is_running:
             self.start_monitoring()
         else:
             self.stop_monitoring()
 
     def start_monitoring(self):
-        """Start the file monitoring in a separate thread."""
+        """Start the file monitoring in a separate process."""
         # Check if folder is selected
-        if self.config_data["watched_folder"] == "SELECT FOLDER":
+        if self.config_data["watched_folder"] == "SELECT FOLDER" or not self.config_data["watched_folder"]:
             messagebox.showwarning("No Folder Selected", 
                                  "Please select a folder to monitor before starting.")
             return
@@ -122,58 +120,48 @@ class ConfigGUI(tk.Tk):
             else:
                 return
         
-        # Start monitoring in a separate thread
-        self.observer_thread = threading.Thread(target=self.run_observer, daemon=True)
-        self.observer_thread.start()
-        
-        # Update UI
-        self.monitoring_active = True
-        self.status_label.config(text="Running", fg="green")
-        self.monitor_button.config(text="Stop Monitoring", bg="red")
-        
-        messagebox.showinfo("Monitoring Started", 
-                          f"File monitoring started for folder:\n{self.config_data['watched_folder']}")
+        # Start monitoring in a separate process
+        try:
+            # Using sys.executable ensures we use the same python interpreter
+            # that is running the GUI. This is important for virtual envs.
+            # We construct the absolute path to main.py to be safe.
+            main_script_path = Path(__file__).resolve().parent.parent / "main.py"
+            
+            self.monitor_process = subprocess.Popen(
+                [sys.executable, str(main_script_path), "monitor"]
+            )
+            
+            # Update UI
+            self.status_label.config(text="Running", fg="green")
+            self.monitor_button.config(text="Stop Monitoring", bg="red")
+            
+            messagebox.showinfo("Monitoring Started", 
+                              f"File monitoring started for folder:\n{self.config_data['watched_folder']}")
+        except Exception as e:
+            messagebox.showerror("Failed to Start", f"Could not start the monitoring process:\n{e}")
+            self.status_label.config(text="Error", fg="red")
+            self.monitor_button.config(text="Start Monitoring", bg="green")
+
 
     def stop_monitoring(self):
-        """Stop the file monitoring."""
-        self.monitoring_active = False
+        """Stop the file monitoring process."""
+        if self.monitor_process and self.monitor_process.poll() is None:
+            self.monitor_process.terminate()
+            try:
+                # Wait for a short period for the process to terminate
+                self.monitor_process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                # If it doesn't terminate, force kill it
+                self.monitor_process.kill()
+                self.monitor_process.wait()
+
+        self.monitor_process = None
         
         # Update UI
         self.status_label.config(text="Stopped", fg="red")
         self.monitor_button.config(text="Start Monitoring", bg="green")
         
         messagebox.showinfo("Monitoring Stopped", "File monitoring has been stopped.")
-
-    def run_observer(self):
-        """Run the file observer - this runs in a separate thread."""
-        try:
-            # Create a modified version of start_observer that can be stopped
-            from organizer import DocumentHandler
-            from watchdog.observers import Observer
-            
-            watched_folder = Path(self.config_data["watched_folder"])
-            event_handler = DocumentHandler(self.config_data)
-            observer = Observer()
-            observer.schedule(event_handler, str(watched_folder), recursive=False)
-            observer.start()
-            
-            # Keep running until monitoring is stopped
-            while self.monitoring_active:
-                observer.join(timeout=1)  # Check every second
-                
-            observer.stop()
-            observer.join()
-            
-        except Exception as e:
-            # Handle any errors and update UI on main thread
-            self.after(0, lambda: self.handle_monitoring_error(str(e)))
-
-    def handle_monitoring_error(self, error_message):
-        """Handle monitoring errors on the main thread."""
-        self.monitoring_active = False
-        self.status_label.config(text="Error", fg="red")
-        self.monitor_button.config(text="Start Monitoring", bg="green")
-        messagebox.showerror("Monitoring Error", f"An error occurred during monitoring:\n{error_message}")
 
     # Folder browse
     def browse_folder(self):
