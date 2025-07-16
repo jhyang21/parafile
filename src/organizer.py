@@ -43,6 +43,17 @@ class DocumentHandler(FileSystemEventHandler):
         logger.info(f"New file detected: {filepath.name}")
         self.process_file(filepath)
 
+    def on_moved(self, event):
+        if event.is_directory:
+            return
+
+        filepath = Path(event.dest_path)
+        if filepath.suffix.lower() not in SUPPORTED_EXTENSIONS:
+            return
+
+        logger.info(f"New file moved into directory: {filepath.name}")
+        self.process_file(filepath)
+
     def process_file(self, filepath: Path):
         # Retry mechanism for file access issues
         max_retries = 3
