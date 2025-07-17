@@ -4,7 +4,7 @@ Automatically rename and organize your PDF and Word documents with your naming a
 
 ## 🎥 Demo
 
-[Watch the Parafile Demo Video](https://github.com/jhyang21/parafile/raw/refs/heads/main/demo_videos/parafile-v1.0.0-demo.mp4)
+[Watch the Parafile Demo Video](https://youtu.be/6As2GGTU0gk)
 
 ## **Prerequisites**
 1. Python 3.10+ installed
