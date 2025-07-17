@@ -97,9 +97,6 @@ class ConfigGUI(tk.Tk):
         self.refresh_categories()
         self.refresh_variables()
 
-        # Save button
-        tk.Button(self.list_view_frame, text="Save Watched Folder", command=self.save_changes).pack(pady=10)
-
     def show_view(self, view_frame: tk.Frame):
         """Switch to a different view frame."""
         if self.current_view:
@@ -194,8 +191,9 @@ class ConfigGUI(tk.Tk):
         folder_selected = filedialog.askdirectory()
         if folder_selected:
             self.folder_var.set(folder_selected)
-            self.config_data["watched_folder"] = folder_selected
+            self.config_data["watched_folder"] = self.folder_var.get().strip()
             save_config(self.config_data)
+            messagebox.showinfo("Config Saved", "Watched folder saved successfully.")
     
     def prompt_folder_selection(self):
         """Prompt user to select a folder if none is selected."""
@@ -413,12 +411,6 @@ class ConfigGUI(tk.Tk):
         self.var_listbox.delete(0, tk.END)
         for var in self.config_data.get("variables", []):
             self.var_listbox.insert(tk.END, var["name"])
-
-    def save_changes(self):
-        self.config_data["watched_folder"] = self.folder_var.get().strip()
-        save_config(self.config_data)
-        messagebox.showinfo("Config Saved", "Watched folder saved successfully.")
-
 
 def main():
     """Main entry point for the GUI application."""
