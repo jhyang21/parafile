@@ -2,6 +2,10 @@
 
 Automatically rename and organize your PDF and Word documents with your naming and organization rules. Simply drop files in your monitored folder and watch them get intelligently renamed and organized!
 
+## 🎥 Demo
+
+[Watch the Parafile Demo Video](https://github.com/jhyang21/parafile/raw/refs/heads/main/demo_videos/parafile-v1.0.0-demo.mp4)
+
 ## **Prerequisites**
 1. Python 3.10+ installed
 2. OpenAI API key ([Get one here](https://platform.openai.com/api-keys))
@@ -10,6 +14,11 @@ Automatically rename and organize your PDF and Word documents with your naming a
 
 ### 1. Install & Setup
 ```bash
+
+# Clone repository
+git clone https://github.com/jhyang21/parafile.git
+cd parafile
+
 # Install dependencies
 pip install -r requirements.txt
 
@@ -20,7 +29,7 @@ cp env.example .env
 
 ### 2. Configure
 ```bash
-python main.py gui
+python main.py
 ```
 - Select the folder to be monitored
 - Create categories (e.g., "Invoices", "Reports")
