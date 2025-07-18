@@ -49,7 +49,7 @@ def _build_prompt(categories: List[Dict[str, str]], variables: List[Dict[str, st
     return prompt
 
 
-def get_ai_suggestion(document_text: str, categories: List[Dict[str, str]], variables: List[Dict[str, str]]) -> Tuple[str, str]:
+def get_ai_filename_suggestion(document_text: str, categories: List[Dict[str, str]], variables: List[Dict[str, str]]) -> Tuple[str, str]:
     """Send prompt to OpenAI and parse the response.
 
     Returns a tuple of (category, suggested_name).
