@@ -275,10 +275,28 @@ class ConfigGUI(tk.Tk):
         row = 0
         for label, var in fields.items():
             tk.Label(form_fields_frame, text=label.replace("_", " ").capitalize() + ":").grid(row=row, column=0, sticky=tk.W, pady=5)
-            entry = tk.Entry(form_fields_frame, textvariable=var, width=40)
+            if label == "naming_pattern":
+                entry = tk.Text(form_fields_frame, height=2, width=40)
+                entry.insert("1.0", var.get())
+            else:
+                entry = tk.Entry(form_fields_frame, textvariable=var, width=40)
             entry.grid(row=row, column=1, pady=5, padx=5)
             entry_widgets[label] = entry
             row += 1
+
+        naming_pattern_text = entry_widgets["naming_pattern"]
+        naming_pattern_text.tag_configure("variable", background="#e0e0e0", relief="raised")
+
+        def update_tags():
+            naming_pattern_text.tag_remove("variable", "1.0", tk.END)
+            text = naming_pattern_text.get("1.0", tk.END)
+            import re
+            for match in re.finditer(r"\{(\w+)\}", text):
+                start = f"1.0 + {match.start()}c"
+                end = f"1.0 + {match.end()}c"
+                naming_pattern_text.tag_add("variable", start, end)
+        
+        update_tags()
 
         # Variables list on the right
         variables_list_frame = tk.Frame(editor_frame, padx=10)
@@ -297,22 +315,61 @@ class ConfigGUI(tk.Tk):
             
             variable_name = var_listbox.get(selection[0])
             naming_pattern_entry = entry_widgets["naming_pattern"]
-            naming_pattern_entry.insert(tk.INSERT, f"{{{variable_name}}}")
+            naming_pattern_entry.insert(tk.INSERT, f"/{{{variable_name}}}")
+            update_tags()
             # Delay focus setting to ensure cursor visibility after the event.
             naming_pattern_entry.after(10, naming_pattern_entry.focus_set)
 
         var_listbox.bind("<<ListboxSelect>>", insert_variable_at_cursor)
 
+        naming_pattern_entry = entry_widgets["naming_pattern"]
+
+        def show_variable_suggestions(event):
+            # This function is triggered on any key press in the naming_pattern_entry
+            # We only want to show suggestions if the typed character is "/"
+            if event.char == '/':
+                # Get cursor position
+                cursor_pos = naming_pattern_entry.index(tk.INSERT)
+                
+                # Create a popup menu
+                menu = tk.Menu(self.form_view_frame, tearoff=0)
+                for var in self.config_data.get("variables", []):
+                    menu.add_command(label=var["name"], command=lambda v=var["name"]: insert_variable(f"{{{v}}}"))
+
+                # Position and display the menu
+                x, y = naming_pattern_entry.winfo_rootx(), naming_pattern_entry.winfo_rooty()
+                bbox = naming_pattern_entry.bbox(cursor_pos)
+                if bbox:
+                    x += bbox[0]
+                    y += bbox[1] + bbox[3]
+                menu.post(x, y)
+
+        def insert_variable(var_string):
+            naming_pattern_entry.insert(tk.INSERT, var_string)
+            update_tags()
+            
+        # Bind to <Key> to be able to inspect event.char
+        naming_pattern_entry.bind("<Key>", show_variable_suggestions)
+        naming_pattern_entry.bind("<KeyRelease>", lambda e: update_tags())
+
+
         def on_save():
-            vals = {k: v.get().strip() for k, v in fields.items()}
-            if not vals["name"]:
+            """Save the new/edited category."""
+            new_cat = {}
+            for label, var in fields.items():
+                if label == "naming_pattern":
+                    new_cat[label] = entry_widgets[label].get("1.0", tk.END).strip()
+                else:
+                    new_cat[label] = var.get()
+
+            if not new_cat["name"]:
                 messagebox.showerror("Error", "Name is required.", parent=self.form_view_frame)
                 return
 
             if index is not None:
-                self.config_data["categories"][index] = vals
+                self.config_data["categories"][index] = new_cat
             else:
-                self.config_data["categories"].append(vals)
+                self.config_data["categories"].append(new_cat)
             
             save_config(self.config_data)
             self.refresh_categories()
