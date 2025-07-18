@@ -51,6 +51,7 @@ Now drop PDF/Word files in your monitored folder and watch them get organized au
 
 ### Example
 **Before:** `Invoice_ABC_Company_Dec2024.pdf` (in Downloads/)
+
 **After:** `2024-12-15_ABC_Company_invoice.pdf` (in Downloads/Invoices/)
 
 ## ⚙️ Configuration
