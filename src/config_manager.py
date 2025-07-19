@@ -29,8 +29,8 @@ DEFAULT_CONFIG = {
     "categories": [
         {
             "name": "General",
+            "description": "Default category when no other categories match.",
             "naming_pattern": "{original_name}",
-            "description": "Default category when no other rules match."
         }
     ],
     "variables": [
