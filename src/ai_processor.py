@@ -17,16 +17,9 @@ from typing import List, Dict, Tuple
 from openai import OpenAI
 from dotenv import load_dotenv
 
-# Load environment variables from .env file if present
-# This ensures API keys and other secrets are properly loaded
 load_dotenv()
-
-# Initialize OpenAI client with API key from environment
-# The client will be used for all API calls throughout the module
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# Validate that the API key is available before proceeding
-# This prevents runtime errors when making API calls
 if not os.getenv("OPENAI_API_KEY"):
     raise EnvironmentError(
         "OPENAI_API_KEY not set. Please configure your environment or .env file.")
@@ -54,8 +47,7 @@ def _build_prompt(categories: List[Dict[str, str]],
     Returns:
         str: Complete prompt string ready for API submission
     """
-    # Build the categories section of the prompt
-    # Each category includes its name, description, and naming pattern
+    # Build categories section with name, description, and naming pattern
     categories_block = []
     for cat in categories:
         categories_block.append(
@@ -65,8 +57,7 @@ def _build_prompt(categories: List[Dict[str, str]],
         )
     categories_section = "\n---\n".join(categories_block)
 
-    # Build the variables section of the prompt
-    # Variables are placeholders that can be used in naming patterns
+    # Build variables section - placeholders for use in naming patterns
     variables_block = []
     for var in variables:
         variables_block.append(
@@ -75,13 +66,6 @@ def _build_prompt(categories: List[Dict[str, str]],
         )
     variables_section = "\n---\n".join(variables_block)
 
-    # Construct the complete prompt with clear instructions
-    # The prompt is designed to guide the AI to:
-    # 1. Understand its role as a file organization assistant
-    # 2. Analyze the document content
-    # 3. Choose the most appropriate category
-    # 4. Generate a filename using the category's naming pattern
-    # 5. Return results in the specified JSON format
     prompt = (
         "You are an expert file organization assistant. Your task is to "
         "analyze the text of a document and classify it into one of the "
@@ -128,25 +112,18 @@ def get_ai_filename_suggestion(document_text: str,
         will gracefully fall back to default values ("General", "unnamed_file")
         to prevent the application from crashing.
     """
-    # Build the prompt using the helper function
     prompt = _build_prompt(categories, variables, document_text)
 
     try:
-        # Make the API call to OpenAI
-        # Using GPT-4 for better document analysis and categorization
-        # Temperature of 0.2 provides consistent results with minimal randomness
+        # Use GPT-4 with low temperature for consistent document categorization
         response = client.chat.completions.create(
-            model="gpt-4.1-2025-04-14",  # Latest GPT-4 model for best performance
+            model="gpt-4.1-2025-04-14",
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=256,  # Sufficient for category and filename response
-            temperature=0.2,  # Low temperature for consistent, focused responses
+            max_tokens=256,
+            temperature=0.2,
         )
 
-        # Extract the response content
         content = response.choices[0].message.content.strip()
-
-        # Parse the JSON response from the AI
-        # The AI is instructed to return a JSON object with specific keys
         result = json.loads(content)
         category = result.get("category", "General")
         suggested_name = result.get("suggested_name", "unnamed_file")
@@ -154,15 +131,11 @@ def get_ai_filename_suggestion(document_text: str,
         return category, suggested_name
         
     except json.JSONDecodeError:
-        # Handle cases where AI returns malformed JSON
-        # This can happen if the AI doesn't follow instructions exactly
+        # AI returned malformed JSON - fallback to defaults
         return "General", "unnamed_file"
     except Exception:
-        # Handle any other API-related errors (network, quota, etc.)
-        # Graceful degradation ensures the application continues working
+        # API errors (network, quota, etc.) - graceful degradation
         return "General", "unnamed_file"
 
 
-# Define the public API of this module
-# This helps other developers understand what functions are intended for external use
 __all__ = ["get_ai_filename_suggestion"] 

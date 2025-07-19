@@ -62,36 +62,26 @@ class ConfigGUI(tk.Tk):
         """
         super().__init__()
         
-        # Configure main window properties
         self.title("File Organizer Settings")
         self.geometry("600x600")
 
-        # Load current configuration from disk
         self.config_data = load_config()
-        
-        # Initialize monitoring process tracking
         self.monitor_process: subprocess.Popen | None = None
-        
-        # Initialize view management system
         self.current_view = None
 
-        # Create main container for view switching
-        # This allows us to swap between list view and form views
+        # Main container for view switching between list and form views
         self.view_container = tk.Frame(self)
         self.view_container.pack(fill=tk.BOTH, expand=True)
 
-        # Create and display the main list view
         self.create_list_view()
         self.show_list_view()
             
-        # Check if folder needs to be selected after GUI initialization
-        # This ensures the dialog appears properly over the main window
+        # Prompt for folder selection if none configured
         if (self.config_data["watched_folder"] == "SELECT FOLDER" or 
             not self.config_data["watched_folder"]):
             self.prompt_folder_selection()
             
-        # Bind window close event to ensure proper cleanup
-        # This prevents leaving orphaned monitoring processes
+        # Ensure proper cleanup on window close to prevent orphaned processes
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
 
     def create_list_view(self):
@@ -218,12 +208,11 @@ class ConfigGUI(tk.Tk):
         any form view. It properly cleans up form views by destroying them
         to prevent memory leaks and interface conflicts.
         """
-        # Clean up any existing form view
+        # Clean up any existing form view to prevent memory leaks
         if hasattr(self, 'form_view_frame'):
             self.form_view_frame.destroy()
             del self.form_view_frame
             
-        # Switch to the list view
         self.show_view(self.list_view_frame)
 
     def on_closing(self):
@@ -234,11 +223,9 @@ class ConfigGUI(tk.Tk):
         before the application exits. This prevents orphaned processes
         that would continue running after the GUI is closed.
         """
-        # Stop monitoring if it's currently running
         if self.monitor_process and self.monitor_process.poll() is None:
             self.stop_monitoring()
             
-        # Close the application
         self.destroy()
 
     def toggle_monitoring(self):
@@ -249,7 +236,6 @@ class ConfigGUI(tk.Tk):
         and either starts or stops it accordingly. The button text and
         status display are updated to reflect the current state.
         """
-        # Check if monitoring is currently running
         is_running = (self.monitor_process and 
                      self.monitor_process.poll() is None)
                      
@@ -269,7 +255,6 @@ class ConfigGUI(tk.Tk):
         The monitoring runs as a separate process to avoid blocking the GUI
         and to allow the user to continue configuring while monitoring runs.
         """
-        # Validate that a folder has been selected
         if (self.config_data["watched_folder"] == "SELECT FOLDER" or 
             not self.config_data["watched_folder"]):
             messagebox.showwarning(
@@ -277,42 +262,34 @@ class ConfigGUI(tk.Tk):
                 "Please select a folder to monitor before starting.")
             return
         
-        # Validate that the folder exists or offer to create it
         folder_path = Path(self.config_data["watched_folder"])
         if not folder_path.exists():
             result = messagebox.askyesno(
                 "Folder Not Found", 
                 f"The folder '{folder_path}' does not exist. Create it?")
             if result:
-                # Create the folder and any necessary parent directories
                 folder_path.mkdir(parents=True, exist_ok=True)
             else:
                 return
         
-        # Launch the monitoring service as a subprocess
         try:
-            # Use sys.executable to ensure we use the same Python interpreter
-            # This is crucial for virtual environments and different Python installations
+            # Use sys.executable to ensure compatibility with virtual environments
             main_script_path = (Path(__file__).resolve().parent.parent / 
                                "main.py")
             
-            # Start the monitoring process in the background
             self.monitor_process = subprocess.Popen(
                 [sys.executable, str(main_script_path), "monitor"]
             )
             
-            # Update the UI to reflect the running state
             self.status_label.config(text="Running", fg="green")
             self.monitor_button.config(text="Stop Monitoring", bg="red")
             
-            # Provide user feedback
             messagebox.showinfo(
                 "Monitoring Started", 
                 f"File monitoring started for folder:\n"
                 f"{self.config_data['watched_folder']}")
                 
         except Exception as e:
-            # Handle errors in starting the process
             messagebox.showerror(
                 "Failed to Start", 
                 f"Could not start the monitoring process:\n{e}")
@@ -328,26 +305,18 @@ class ConfigGUI(tk.Tk):
         attempting a normal termination and falling back to force kill
         if necessary. It updates the UI and provides user feedback.
         """
-        # Check if there's a process to stop
         if self.monitor_process and self.monitor_process.poll() is None:
-            # Attempt graceful termination
+            # Attempt graceful termination, force kill if needed
             self.monitor_process.terminate()
             try:
-                # Wait for the process to terminate gracefully
                 self.monitor_process.wait(timeout=5)
             except subprocess.TimeoutExpired:
-                # Force kill if graceful termination fails
                 self.monitor_process.kill()
                 self.monitor_process.wait()
 
-        # Clear the process reference
         self.monitor_process = None
-        
-        # Update UI to reflect stopped state
         self.status_label.config(text="Stopped", fg="red")
         self.monitor_button.config(text="Start Monitoring", bg="green")
-        
-        # Provide user feedback
         messagebox.showinfo("Monitoring Stopped", 
                            "File monitoring has been stopped.")
 
@@ -359,18 +328,12 @@ class ConfigGUI(tk.Tk):
         folder using the system's native folder browser. It automatically
         saves the configuration after selection.
         """
-        # Open the folder selection dialog
         folder_selected = filedialog.askdirectory()
         
         if folder_selected:
-            # Update the entry field and configuration
             self.folder_var.set(folder_selected)
             self.config_data["watched_folder"] = self.folder_var.get().strip()
-            
-            # Save the updated configuration
             save_config(self.config_data)
-            
-            # Provide user feedback
             messagebox.showinfo("Config Saved", 
                                "Watched folder saved successfully.")
     
@@ -382,7 +345,6 @@ class ConfigGUI(tk.Tk):
         has a valid folder configured before they can start monitoring.
         It provides a clear explanation and optional selection process.
         """
-        # Ask if the user wants to select a folder now
         result = messagebox.askyesno(
             "Select Folder", 
             "No folder is currently selected for monitoring. "
@@ -497,7 +459,6 @@ class ConfigGUI(tk.Tk):
         self.form_view_frame = tk.Frame(self.view_container, padx=10, pady=10)
         self.show_view(self.form_view_frame)
 
-        # Form title based on mode
         title = "Edit Category" if cat else "Add Category"
         tk.Label(self.form_view_frame, text=title, 
                 font=("Helvetica", 16)).pack(pady=10)
@@ -506,12 +467,10 @@ class ConfigGUI(tk.Tk):
         editor_frame = tk.Frame(self.form_view_frame)
         editor_frame.pack(fill=tk.BOTH, expand=True, pady=10)
 
-        # === FORM FIELDS SECTION ===
         # Left side: form input fields
         form_fields_frame = tk.Frame(editor_frame, padx=10)
         form_fields_frame.pack(side=tk.LEFT, fill=tk.Y, anchor=tk.N)
         
-        # Create StringVar objects for form fields
         fields = {
             "name": tk.StringVar(value=cat["name"] if cat else ""),
             "description": tk.StringVar(value=cat["description"] if cat else ""),
@@ -519,31 +478,26 @@ class ConfigGUI(tk.Tk):
                                          if cat else ""),
         }
 
-        # Dictionary to hold entry widgets for later reference
         entry_widgets = {}
         
         # Create form fields dynamically
         row = 0
         for label, var in fields.items():
-            # Create label for the field
             tk.Label(form_fields_frame, 
                     text=label.replace("_", " ").capitalize() + ":").grid(
                         row=row, column=0, sticky=tk.W, pady=5)
                         
-            # Create appropriate widget based on field type
+            # Use Text widget for naming pattern (multi-line), Entry for others
             if label == "naming_pattern":
-                # Use Text widget for multi-line naming pattern with syntax highlighting
                 entry = tk.Text(form_fields_frame, height=2, width=40)
                 entry.insert("1.0", var.get())
             else:
-                # Use Entry widget for single-line fields
                 entry = tk.Entry(form_fields_frame, textvariable=var, width=40)
                 
             entry.grid(row=row, column=1, pady=5, padx=5)
             entry_widgets[label] = entry
             row += 1
 
-        # === SYNTAX HIGHLIGHTING SETUP ===
         # Configure syntax highlighting for the naming pattern field
         naming_pattern_text = entry_widgets["naming_pattern"]
         naming_pattern_text.tag_configure("variable", background="#e0e0e0", 
@@ -557,25 +511,18 @@ class ConfigGUI(tk.Tk):
             placeholders (e.g., {variable_name}) and applies visual
             highlighting to make them easily identifiable.
             """
-            # Remove existing highlighting
             naming_pattern_text.tag_remove("variable", "1.0", tk.END)
-            
-            # Get the current text content
             text = naming_pattern_text.get("1.0", tk.END)
             
             # Find and highlight all variable placeholders using regex
             import re
             for match in re.finditer(r"\{(\w+)\}", text):
-                # Calculate text widget positions for the match
                 start = f"1.0 + {match.start()}c"
                 end = f"1.0 + {match.end()}c"
-                # Apply the highlighting tag
                 naming_pattern_text.tag_add("variable", start, end)
         
-        # Apply initial highlighting
         update_tags()
 
-        # === VARIABLE HELPER SECTION ===
         # Right side: available variables list for easy insertion
         variables_list_frame = tk.Frame(editor_frame, padx=10)
         variables_list_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
@@ -583,7 +530,6 @@ class ConfigGUI(tk.Tk):
         tk.Label(variables_list_frame, 
                 text="Available Variables (click to insert)").pack(anchor=tk.W)
 
-        # Listbox showing all available variables
         var_listbox = tk.Listbox(variables_list_frame, height=8)
         for variable in self.config_data.get("variables", []):
             var_listbox.insert(tk.END, variable["name"])
@@ -604,24 +550,15 @@ class ConfigGUI(tk.Tk):
             if not selection:
                 return
             
-            # Get the selected variable name
             variable_name = var_listbox.get(selection[0])
-            
-            # Insert the variable placeholder at cursor position
             naming_pattern_entry = entry_widgets["naming_pattern"]
             naming_pattern_entry.insert(tk.INSERT, f"/{{{variable_name}}}")
-            
-            # Update syntax highlighting
             update_tags()
             
-            # Return focus to the naming pattern field after a brief delay
-            # This ensures the cursor remains visible and usable
+            # Return focus to the naming pattern field
             naming_pattern_entry.after(10, naming_pattern_entry.focus_set)
 
-        # Bind variable selection to insertion function
         var_listbox.bind("<<ListboxSelect>>", insert_variable_at_cursor)
-
-        # Get reference to naming pattern entry for keyboard shortcuts
         naming_pattern_entry = entry_widgets["naming_pattern"]
 
         def show_variable_suggestions(event):
@@ -635,9 +572,7 @@ class ConfigGUI(tk.Tk):
             Args:
                 event: The key press event containing the typed character
             """
-            # Only show suggestions for '/' character
             if event.char == '/':
-                # Get current cursor position for menu placement
                 cursor_pos = naming_pattern_entry.index(tk.INSERT)
                 
                 # Create popup menu with variable options
@@ -655,7 +590,6 @@ class ConfigGUI(tk.Tk):
                     x += bbox[0]
                     y += bbox[1] + bbox[3]
                     
-                # Display the menu
                 menu.post(x, y)
 
         def insert_variable(var_string):
@@ -671,7 +605,6 @@ class ConfigGUI(tk.Tk):
             naming_pattern_entry.insert(tk.INSERT, var_string)
             update_tags()
             
-        # Bind keyboard shortcuts for variable suggestions
         naming_pattern_entry.bind("<Key>", show_variable_suggestions)
         naming_pattern_entry.bind("<KeyRelease>", lambda e: update_tags())
 
@@ -687,14 +620,11 @@ class ConfigGUI(tk.Tk):
             new_cat = {}
             for label, var in fields.items():
                 if label == "naming_pattern":
-                    # Get text from Text widget
                     new_cat[label] = entry_widgets[label].get("1.0", 
                                                             tk.END).strip()
                 else:
-                    # Get value from StringVar
                     new_cat[label] = var.get()
 
-            # Validate required fields
             if not new_cat["name"]:
                 messagebox.showerror("Error", "Name is required.", 
                                    parent=self.form_view_frame)

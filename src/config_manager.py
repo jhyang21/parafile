@@ -20,18 +20,16 @@ import json
 from pathlib import Path
 from typing import Any, Dict
 
-# Configuration file location relative to the project root
-# Using pathlib for cross-platform path handling
 CONFIG_FILE = Path(__file__).resolve().parent.parent / "config.json"
 
 # Default configuration structure used when creating new config files
 # or when repairing corrupted/incomplete configurations
 DEFAULT_CONFIG = {
-    "watched_folder": "SELECT FOLDER",  # Placeholder indicating no folder selected
+    "watched_folder": "SELECT FOLDER",
     "categories": [
         {
             "name": "General",
-            "naming_pattern": "{original_name}",  # Preserves original filename
+            "naming_pattern": "{original_name}",
             "description": "Default category when no other rules match."
         }
     ],
@@ -59,27 +57,21 @@ def load_config() -> Dict[str, Any]:
         
     Note:
         This function never raises exceptions. It will always return a valid
-        configuration, creating or repairing files as needed. This ensures
-        the application can always start successfully.
+        configuration, creating or repairing files as needed.
     """
-    # Check if configuration file exists
     if not CONFIG_FILE.exists():
-        # Create new configuration with default values
         save_config(DEFAULT_CONFIG)
         return DEFAULT_CONFIG.copy()
 
     try:
-        # Attempt to load and parse the configuration file
         with CONFIG_FILE.open("r", encoding="utf-8") as fp:
             data = json.load(fp)
     except (json.JSONDecodeError, OSError):
-        # Handle corrupted or unreadable configuration files
-        # Reset to default configuration to ensure application stability
+        # Reset to default configuration for corrupted or unreadable files
         save_config(DEFAULT_CONFIG)
         return DEFAULT_CONFIG.copy()
 
     # Validate and repair configuration structure
-    # Track if any repairs were made to determine if we need to save
     updated = False
     
     # Ensure all required top-level keys exist
@@ -88,14 +80,11 @@ def load_config() -> Dict[str, Any]:
             data[key] = default_val
             updated = True
     
-    # Validate categories section
+    # Ensure the required "General" category exists as fallback
     if "categories" in data:
-        # Ensure the required "General" category exists
-        # This category serves as a fallback when AI can't categorize documents
         has_general = any(cat.get("name") == "General" 
                          for cat in data["categories"])
         if not has_general:
-            # Create the General category with safe defaults
             general_category = {
                 "name": "General",
                 "naming_pattern": "{original_name}",
@@ -104,14 +93,11 @@ def load_config() -> Dict[str, Any]:
             data["categories"].append(general_category)
             updated = True
     
-    # Validate variables section
+    # Ensure the required "original_name" variable exists for basic filename preservation
     if "variables" in data:
-        # Ensure the required "original_name" variable exists
-        # This variable is essential for basic filename preservation
         has_original_name = any(var.get("name") == "original_name" 
                                for var in data["variables"])
         if not has_original_name:
-            # Create the original_name variable
             original_name_var = {
                 "name": "original_name",
                 "description": "The original filename without extension."
@@ -119,7 +105,6 @@ def load_config() -> Dict[str, Any]:
             data["variables"].append(original_name_var)
             updated = True
     
-    # Save the configuration if any repairs were made
     if updated:
         save_config(data)
         
@@ -130,31 +115,18 @@ def save_config(config: Dict[str, Any]) -> None:
     """
     Save the given config dictionary to the JSON file in a human-readable format.
     
-    The configuration is saved with proper indentation and UTF-8 encoding
-    to ensure it's readable by both the application and human collaborators
-    who may need to manually edit the configuration.
-    
     Args:
         config: Complete configuration dictionary to save
         
     Raises:
         RuntimeError: If the file cannot be written (permissions, disk space, etc.)
-        
-    Note:
-        The function uses ensure_ascii=False to properly handle international
-        characters in folder paths and category names.
     """
     try:
-        # Write configuration with human-readable formatting
-        # indent=2 provides good readability without excessive spacing
-        # ensure_ascii=False allows proper Unicode character handling
+        # Write with formatting for human readability and proper Unicode handling
         with CONFIG_FILE.open("w", encoding="utf-8") as fp:
             json.dump(config, fp, indent=2, ensure_ascii=False)
     except OSError as exc:
-        # Provide a more descriptive error message for troubleshooting
         raise RuntimeError(f"Failed to write configuration file: {exc}")
 
 
-# Define the public API of this module
-# These are the main functions and constants that other modules should use
 __all__ = ["load_config", "save_config", "CONFIG_FILE"] 

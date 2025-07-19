@@ -26,14 +26,10 @@ from config_manager import load_config
 from text_extractor import extract_text_from_pdf, extract_text_from_docx
 from ai_processor import get_ai_filename_suggestion
 
-# Configure logging for the organizer module
-# Provides timestamped logs for monitoring and debugging
 logging.basicConfig(level=logging.INFO, 
                    format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
-# Define supported file extensions for processing
-# Only files with these extensions will be monitored and processed
 SUPPORTED_EXTENSIONS: List[str] = [".pdf", ".docx"]
 
 
@@ -41,29 +37,15 @@ def ensure_category_folder(base_folder: Path, category_name: str) -> Path:
     """
     Create (if necessary) and return the path to the category subfolder.
     
-    This function ensures that the category folder structure exists within
-    the monitored directory. Each category gets its own subfolder to keep
-    organized files properly separated.
-    
     Args:
         base_folder: The root monitored directory
         category_name: Name of the category (used as folder name)
         
     Returns:
         Path: Full path to the category folder
-        
-    Note:
-        This function is safe to call multiple times - it won't raise errors
-        if the folder already exists. Parent directories are also created
-        if needed.
     """
-    # Create the category subfolder path
     category_folder = base_folder / category_name
-    
-    # Create the folder and any necessary parent directories
-    # exist_ok=True prevents errors if folder already exists
     category_folder.mkdir(parents=True, exist_ok=True)
-    
     return category_folder
 
 
@@ -74,7 +56,7 @@ class DocumentHandler(FileSystemEventHandler):
     This class extends FileSystemEventHandler to respond to file system events.
     It specifically handles file creation and move events, filtering for
     supported document types and processing them through the AI pipeline.
-    
+
     The handler implements robust error handling and retry logic to deal with
     common file access issues like temporary locks or permission problems.
     """
@@ -94,58 +76,36 @@ class DocumentHandler(FileSystemEventHandler):
         """
         Handle file creation events in the monitored directory.
         
-        This method is called whenever a new file is created in the watched
-        folder. It filters for supported file types and processes them.
-        
         Args:
-            event: FileCreatedEvent containing information about the new file
-            
-        Note:
-            Directory creation events are ignored. Only regular files with
-            supported extensions are processed.
+            event: File creation event from watchdog
         """
-        # Ignore directory creation events
+        # Skip directory events and unsupported file types
         if event.is_directory:
             return
-
-        # Convert event path to Path object for easier handling
+            
         filepath = Path(event.src_path)
-        
-        # Check if the file has a supported extension
         if filepath.suffix.lower() not in SUPPORTED_EXTENSIONS:
             return
 
-        # Log the detection and process the file
         logger.info(f"New file detected: {filepath.name}")
         self.process_file(filepath)
 
     def on_moved(self, event):
         """
-        Handle file move events into the monitored directory.
-        
-        This method captures files that are moved into the monitored directory
-        from elsewhere. This is common when files are downloaded or copied
-        from other locations.
+        Handle file move events (common with downloads and email attachments).
         
         Args:
-            event: FileMovedEvent containing source and destination paths
-            
-        Note:
-            Only processes the destination (final) location of moved files.
+            event: File move event from watchdog
         """
-        # Ignore directory move events
+        # Skip directory events and unsupported file types
         if event.is_directory:
             return
-
-        # Process the destination path where the file was moved to
+            
         filepath = Path(event.dest_path)
-        
-        # Check if the moved file has a supported extension
         if filepath.suffix.lower() not in SUPPORTED_EXTENSIONS:
             return
 
-        # Log the detection and process the file
-        logger.info(f"New file moved into directory: {filepath.name}")
+        logger.info(f"File moved into folder: {filepath.name}")
         self.process_file(filepath)
 
     def process_file(self, filepath: Path):
@@ -167,12 +127,10 @@ class DocumentHandler(FileSystemEventHandler):
             error handling to prevent crashes from corrupted files or
             temporary access problems.
         """
-        # Configuration for retry mechanism
-        # Files may be temporarily locked after creation/download
+        # Retry configuration - files may be temporarily locked after creation/download
         max_retries = 3
-        retry_delay = 2  # seconds between retries
+        retry_delay = 2
         
-        # Retry loop to handle temporary file access issues
         for attempt in range(max_retries):
             try:
                 # Extract text based on file type
@@ -194,33 +152,26 @@ class DocumentHandler(FileSystemEventHandler):
                 base_folder = Path(self.config["watched_folder"])
                 category_folder = ensure_category_folder(base_folder, category)
 
-                # Construct the new filename, preserving the original extension
-                # This ensures files remain openable by their original applications
+                # Construct new filename, preserving original extension
                 suggested_filename = f"{suggested_name}{filepath.suffix.lower()}"
                 dest_path = category_folder / suggested_filename
 
                 # Handle naming conflicts by appending sequential numbers
-                # This prevents overwriting existing files with similar names
                 counter = 1
                 while dest_path.exists():
-                    # Create a new filename with counter suffix
                     dest_path = category_folder / (
                         f"{suggested_name}_{counter}{filepath.suffix.lower()}")
                     counter += 1
 
-                # Move the file to its new organized location
                 shutil.move(str(filepath), dest_path)
-                
-                # Log the successful organization with relative path for clarity
                 logger.info(f"Moved '{filepath.name}' to "
                            f"'{dest_path.relative_to(base_folder)}'")
                            
-                return  # Success - exit the retry loop
+                return  # Success - exit retry loop
                 
             except PermissionError as exc:
                 # Handle permission/access errors with retry logic
                 if attempt < max_retries - 1:
-                    # Log warning and retry
                     logger.warning(
                         f"Permission denied for '{filepath.name}' "
                         f"(attempt {attempt + 1}/{max_retries}). "
@@ -228,16 +179,14 @@ class DocumentHandler(FileSystemEventHandler):
                     time.sleep(retry_delay)
                     continue
                 else:
-                    # Final attempt failed - log error and give up
                     logger.error(
                         f"Failed to process file '{filepath}' "
                         f"after {max_retries} attempts: {exc}")
                         
             except Exception as exc:
-                # Handle all other errors (corrupted files, AI errors, etc.)
-                # Don't retry for these types of errors as they're unlikely to resolve
+                # Handle all other errors - don't retry as they're unlikely to resolve
                 logger.error(f"Failed to process file '{filepath}': {exc}")
-                break  # Exit retry loop immediately
+                break
 
 
 def start_observer(config):
@@ -249,72 +198,34 @@ def start_observer(config):
     and creates the watch folder if needed.
     
     Args:
-        config: Configuration dictionary containing watched_folder and other settings
+        config: Configuration dictionary with watched_folder and other settings
         
-    Note:
-        This function runs indefinitely until interrupted (Ctrl+C). It's designed
-        to be the main loop for the monitoring service.
+    Returns:
+        Observer: The started watchdog observer instance
+        
+    Raises:
+        ValueError: If watched_folder is not configured or doesn't exist
     """
-    # Get the folder path from configuration
-    watched_folder_path = config["watched_folder"]
+    watched_folder = config.get("watched_folder")
+    if not watched_folder or watched_folder == "SELECT FOLDER":
+        raise ValueError("No watched folder configured. Please set up configuration first.")
     
-    # Validate that a folder has been selected
-    if watched_folder_path == "SELECT FOLDER":
-        logger.error("No folder selected for monitoring. "
-                    "Please run the GUI and select a folder first.")
-        print("ERROR: No folder selected for monitoring.")
-        print("Please run 'python main.py gui' and select a folder to monitor.")
-        return
-    
-    # Convert to Path object and validate/create the folder
-    watched_folder = Path(watched_folder_path)
-    if not watched_folder.exists():
-        logger.warning(f"Watched folder does not exist: {watched_folder}. "
-                      f"Creating it.")
-        # Create the folder and any necessary parent directories
-        watched_folder.mkdir(parents=True)
+    folder_path = Path(watched_folder)
+    if not folder_path.exists():
+        # Create the folder if it doesn't exist
+        folder_path.mkdir(parents=True, exist_ok=True)
+        logger.info(f"Created watched folder: {folder_path}")
 
-    # Set up the file system observer
+    # Set up and start the file system observer
     event_handler = DocumentHandler(config)
     observer = Observer()
-    
-    # Schedule monitoring of the target folder
-    # recursive=False means we only watch the root folder, not subfolders
-    # This prevents processing files that have already been organized
-    observer.schedule(event_handler, str(watched_folder), recursive=False)
-    
-    # Start the observer thread
+    observer.schedule(event_handler, str(folder_path), recursive=False)
     observer.start()
-
-    logger.info(f"Started monitoring '{watched_folder}' for new documents...")
     
-    try:
-        # Main monitoring loop - keep the process alive
-        # The observer runs in a separate thread, so we just need to prevent exit
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        # Handle Ctrl+C gracefully
-        logger.info("Stopping observer...")
-        observer.stop()
-        
-    # Wait for observer thread to finish cleanup
-    observer.join()
-
-
-def main():
-    """
-    Main entry point for the file organizer service.
+    logger.info(f"Started monitoring: {folder_path}")
+    logger.info(f"Supported extensions: {', '.join(SUPPORTED_EXTENSIONS)}")
     
-    Loads configuration and starts the file monitoring system. This function
-    is called when the organizer is launched in monitor mode.
-    """
-    # Load the current configuration
-    config = load_config()
-    
-    # Start the monitoring service
-    start_observer(config)
+    return observer
 
 
-if __name__ == "__main__":
-    main() 
+__all__ = ["start_observer", "SUPPORTED_EXTENSIONS"] 
