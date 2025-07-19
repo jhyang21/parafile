@@ -1,3 +1,10 @@
+"""
+AI processing module for the Parafile application.
+
+This module handles AI-powered filename suggestions using OpenAI's API
+to analyze document content and generate appropriate filenames based on
+user-defined categories and variables.
+"""
 import json
 import os
 from typing import List, Dict, Tuple
@@ -12,15 +19,20 @@ load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 if not os.getenv("OPENAI_API_KEY"):
-    raise EnvironmentError("OPENAI_API_KEY not set. Please configure your environment or .env file.")
+    raise EnvironmentError(
+        "OPENAI_API_KEY not set. Please configure your environment or .env file.")
 
 
-def _build_prompt(categories: List[Dict[str, str]], variables: List[Dict[str, str]], document_text: str) -> str:
+def _build_prompt(categories: List[Dict[str, str]], 
+                  variables: List[Dict[str, str]], 
+                  document_text: str) -> str:
     """Construct the prompt to be sent to the OpenAI API."""
     categories_block = []
     for cat in categories:
         categories_block.append(
-            f"# Category: {cat['name']}\n# Description: {cat['description']}\n# Naming Pattern: {cat['naming_pattern']}"
+            f"# Category: {cat['name']}\n"
+            f"# Description: {cat['description']}\n"
+            f"# Naming Pattern: {cat['naming_pattern']}"
         )
     categories_section = "\n---\n".join(categories_block)
 
@@ -28,14 +40,17 @@ def _build_prompt(categories: List[Dict[str, str]], variables: List[Dict[str, st
     variables_block = []
     for var in variables:
         variables_block.append(
-            f"# Variable: {var['name']}\n# Description: {var['description']}"
+            f"# Variable: {var['name']}\n"
+            f"# Description: {var['description']}"
         )
     variables_section = "\n---\n".join(variables_block)
 
     prompt = (
-        "You are an expert file organization assistant. Your task is to analyze the text of a document "
-        "and classify it into one of the user's custom categories based on their descriptions. "
-        "Then, you must generate a new filename using the naming pattern associated with that category.\n\n"
+        "You are an expert file organization assistant. Your task is to "
+        "analyze the text of a document and classify it into one of the "
+        "user's custom categories based on their descriptions. "
+        "Then, you must generate a new filename using the naming pattern "
+        "associated with that category.\n\n"
         "Here are the user's categories and rules:\n\n---\n"
         f"{categories_section}\n---\n\n"
         "Here are the user's variables and their meanings:\n\n---\n"
@@ -43,13 +58,17 @@ def _build_prompt(categories: List[Dict[str, str]], variables: List[Dict[str, st
         "If no category is a good fit, use the category \"General\".\n\n"
         "Document Text:\n\"\"\"\n"
         f"{document_text}\n\"\"\"\n\n"
-        "Return your response as a single, minified JSON object with the keys \"category\" and \"suggested_name\". "
-        "Fill in the placeholders in the chosen naming pattern with information found in the document text."
+        "Return your response as a single, minified JSON object with the "
+        "keys \"category\" and \"suggested_name\". "
+        "Fill in the placeholders in the chosen naming pattern with "
+        "information found in the document text."
     )
     return prompt
 
 
-def get_ai_filename_suggestion(document_text: str, categories: List[Dict[str, str]], variables: List[Dict[str, str]]) -> Tuple[str, str]:
+def get_ai_filename_suggestion(document_text: str, 
+                               categories: List[Dict[str, str]], 
+                               variables: List[Dict[str, str]]) -> Tuple[str, str]:
     """Send prompt to OpenAI and parse the response.
 
     Returns a tuple of (category, suggested_name).
@@ -75,4 +94,4 @@ def get_ai_filename_suggestion(document_text: str, categories: List[Dict[str, st
         return "General", "unnamed_file"
 
 
-__all__ = ["get_ai_suggestion"] 
+__all__ = ["get_ai_filename_suggestion"] 

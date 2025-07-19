@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """
 Main entry point for Parafile application.
+
+This module provides the command-line interface for launching either the
+GUI configuration interface or the file monitoring system.
 """
 
 import sys
@@ -11,6 +14,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
 from gui import main as gui_main
 from organizer import main as organizer_main
+
 
 def main():
     """Main entry point for the application."""
@@ -28,6 +32,7 @@ def main():
         print("Usage: python main.py [gui|monitor]")
         print("  gui     - Launch the configuration GUI")
         print("  monitor - Start file monitoring")
+
 
 if __name__ == "__main__":
     main() 

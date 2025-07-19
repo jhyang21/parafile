@@ -1,3 +1,9 @@
+"""
+Configuration management module for the Parafile application.
+
+This module handles loading, saving, and validating configuration data
+including categories, variables, and folder settings.
+"""
 import json
 from pathlib import Path
 from typing import Any, Dict
@@ -5,7 +11,7 @@ from typing import Any, Dict
 
 CONFIG_FILE = Path(__file__).resolve().parent.parent / "config.json"
 
-# Default structure used when config.json does not yet exist.
+# Default structure used when config.json does not yet exist
 DEFAULT_CONFIG = {
     "watched_folder": "SELECT FOLDER",
     "categories": [
@@ -51,7 +57,8 @@ def load_config() -> Dict[str, Any]:
     
     # Ensure required "General" category exists
     if "categories" in data:
-        has_general = any(cat.get("name") == "General" for cat in data["categories"])
+        has_general = any(cat.get("name") == "General" 
+                         for cat in data["categories"])
         if not has_general:
             general_category = {
                 "name": "General",
@@ -63,7 +70,8 @@ def load_config() -> Dict[str, Any]:
     
     # Ensure required "original_name" variable exists
     if "variables" in data:
-        has_original_name = any(var.get("name") == "original_name" for var in data["variables"])
+        has_original_name = any(var.get("name") == "original_name" 
+                               for var in data["variables"])
         if not has_original_name:
             original_name_var = {
                 "name": "original_name",

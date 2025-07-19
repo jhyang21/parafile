@@ -1,3 +1,9 @@
+"""
+Text extraction module for the Parafile application.
+
+This module provides functions to extract text content from various file
+formats including PDF and DOCX files for AI processing.
+"""
 from pathlib import Path
 from typing import Union
 

@@ -1,3 +1,9 @@
+"""
+File organization module for the Parafile application.
+
+This module handles file monitoring, text extraction, and automatic file
+organization using AI-powered categorization and naming suggestions.
+"""
 import logging
 import shutil
 import time
@@ -9,9 +15,10 @@ from watchdog.observers import Observer
 
 from config_manager import load_config
 from text_extractor import extract_text_from_pdf, extract_text_from_docx
-from ai_processor import get_ai_suggestion
+from ai_processor import get_ai_filename_suggestion
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(level=logging.INFO, 
+                   format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 
@@ -29,10 +36,12 @@ class DocumentHandler(FileSystemEventHandler):
     """Watchdog event handler that processes new files."""
 
     def __init__(self, config):
+        """Initialize the document handler with configuration."""
         super().__init__()
         self.config = config
 
     def on_created(self, event: FileCreatedEvent):
+        """Handle file creation events."""
         if event.is_directory:
             return
 
@@ -44,6 +53,7 @@ class DocumentHandler(FileSystemEventHandler):
         self.process_file(filepath)
 
     def on_moved(self, event):
+        """Handle file move events."""
         if event.is_directory:
             return
 
@@ -55,6 +65,7 @@ class DocumentHandler(FileSystemEventHandler):
         self.process_file(filepath)
 
     def process_file(self, filepath: Path):
+        """Process a new file by extracting text and organizing it."""
         # Retry mechanism for file access issues
         max_retries = 3
         retry_delay = 2  # seconds
@@ -66,8 +77,12 @@ class DocumentHandler(FileSystemEventHandler):
                 else:
                     document_text = extract_text_from_docx(filepath)
 
-                category, suggested_name = get_ai_suggestion(document_text, self.config["categories"], self.config.get("variables", []))
-                logger.info(f"AI suggestion: category='{category}', name='{suggested_name}'")
+                category, suggested_name = get_ai_filename_suggestion(
+                    document_text, 
+                    self.config["categories"], 
+                    self.config.get("variables", []))
+                logger.info(f"AI suggestion: category='{category}', "
+                           f"name='{suggested_name}'")
 
                 # Determine target folder and full destination path
                 base_folder = Path(self.config["watched_folder"])
@@ -80,39 +95,48 @@ class DocumentHandler(FileSystemEventHandler):
                 # Resolve name conflicts by appending counter
                 counter = 1
                 while dest_path.exists():
-                    dest_path = category_folder / f"{suggested_name}_{counter}{filepath.suffix.lower()}"
+                    dest_path = category_folder / (
+                        f"{suggested_name}_{counter}{filepath.suffix.lower()}")
                     counter += 1
 
                 shutil.move(str(filepath), dest_path)
-                logger.info(f"Moved '{filepath.name}' to '{dest_path.relative_to(base_folder)}'")
+                logger.info(f"Moved '{filepath.name}' to "
+                           f"'{dest_path.relative_to(base_folder)}'")
                 return  # Success, exit retry loop
                 
             except PermissionError as exc:
                 if attempt < max_retries - 1:
-                    logger.warning(f"Permission denied for '{filepath.name}' (attempt {attempt + 1}/{max_retries}). Retrying in {retry_delay} seconds...")
+                    logger.warning(
+                        f"Permission denied for '{filepath.name}' "
+                        f"(attempt {attempt + 1}/{max_retries}). "
+                        f"Retrying in {retry_delay} seconds...")
                     time.sleep(retry_delay)
                     continue
                 else:
-                    logger.error(f"Failed to process file '{filepath}' after {max_retries} attempts: {exc}")
+                    logger.error(
+                        f"Failed to process file '{filepath}' "
+                        f"after {max_retries} attempts: {exc}")
             except Exception as exc:
                 logger.error(f"Failed to process file '{filepath}': {exc}")
                 break  # Don't retry for non-permission errors
 
 
-
 def start_observer(config):
+    """Start the file system observer for monitoring the configured folder."""
     watched_folder_path = config["watched_folder"]
     
     # Check if folder is selected
     if watched_folder_path == "SELECT FOLDER":
-        logger.error("No folder selected for monitoring. Please run the GUI and select a folder first.")
+        logger.error("No folder selected for monitoring. "
+                    "Please run the GUI and select a folder first.")
         print("ERROR: No folder selected for monitoring.")
         print("Please run 'python gui.py' and select a folder to monitor.")
         return
     
     watched_folder = Path(watched_folder_path)
     if not watched_folder.exists():
-        logger.warning(f"Watched folder does not exist: {watched_folder}. Creating it.")
+        logger.warning(f"Watched folder does not exist: {watched_folder}. "
+                      f"Creating it.")
         watched_folder.mkdir(parents=True)
 
     event_handler = DocumentHandler(config)
@@ -131,6 +155,7 @@ def start_observer(config):
 
 
 def main():
+    """Main entry point for the file organizer."""
     config = load_config()
     start_observer(config)
 

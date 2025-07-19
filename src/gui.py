@@ -1,3 +1,9 @@
+"""
+GUI module for the Parafile application.
+
+This module provides a tkinter-based configuration interface for setting up
+categories, variables, and monitoring folders for file organization.
+"""
 import json
 import subprocess
 import sys
@@ -11,7 +17,10 @@ from config_manager import load_config, save_config
 
 
 class ConfigGUI(tk.Tk):
+    """Main GUI application class for Parafile configuration."""
+    
     def __init__(self):
+        """Initialize the main GUI window and components."""
         super().__init__()
         self.title("File Organizer Settings")
         self.geometry("600x600")
@@ -28,14 +37,15 @@ class ConfigGUI(tk.Tk):
         self.show_list_view()
             
         # Check if folder needs to be selected (after GUI is created)
-        if self.config_data["watched_folder"] == "SELECT FOLDER" or not self.config_data["watched_folder"]:
+        if (self.config_data["watched_folder"] == "SELECT FOLDER" or 
+            not self.config_data["watched_folder"]):
             self.prompt_folder_selection()
             
         # Bind window close event to cleanup
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
 
     def create_list_view(self):
-        """Creates the main list view with all the controls."""
+        """Create the main list view with all the controls."""
         self.list_view_frame = tk.Frame(self.view_container)
         
         # Watched folder frame
@@ -44,9 +54,11 @@ class ConfigGUI(tk.Tk):
 
         tk.Label(folder_frame, text="Watched Folder:").pack(side=tk.LEFT)
         self.folder_var = tk.StringVar(value=self.config_data["watched_folder"])
-        self.folder_entry = tk.Entry(folder_frame, textvariable=self.folder_var, width=50)
+        self.folder_entry = tk.Entry(folder_frame, textvariable=self.folder_var, 
+                                    width=50)
         self.folder_entry.pack(side=tk.LEFT, padx=5)
-        tk.Button(folder_frame, text="Browse", command=self.browse_folder).pack(side=tk.LEFT)
+        tk.Button(folder_frame, text="Browse", 
+                 command=self.browse_folder).pack(side=tk.LEFT)
 
         # Monitoring control frame
         monitor_frame = tk.Frame(self.list_view_frame)
@@ -56,7 +68,9 @@ class ConfigGUI(tk.Tk):
         self.status_label = tk.Label(monitor_frame, text="Stopped", fg="red")
         self.status_label.pack(side=tk.LEFT, padx=10)
         
-        self.monitor_button = tk.Button(monitor_frame, text="Start Monitoring", command=self.toggle_monitoring, bg="green", fg="white")
+        self.monitor_button = tk.Button(monitor_frame, text="Start Monitoring", 
+                                       command=self.toggle_monitoring, 
+                                       bg="green", fg="white")
         self.monitor_button.pack(side=tk.LEFT, padx=10)
 
         # Main content frame
@@ -74,9 +88,12 @@ class ConfigGUI(tk.Tk):
         # Category buttons
         cat_btn_frame = tk.Frame(cat_section)
         cat_btn_frame.pack(pady=5)
-        tk.Button(cat_btn_frame, text="Add", command=self.add_category).pack(side=tk.LEFT, padx=5)
-        tk.Button(cat_btn_frame, text="Edit", command=self.edit_category).pack(side=tk.LEFT, padx=5)
-        tk.Button(cat_btn_frame, text="Delete", command=self.delete_category).pack(side=tk.LEFT, padx=5)
+        tk.Button(cat_btn_frame, text="Add", 
+                 command=self.add_category).pack(side=tk.LEFT, padx=5)
+        tk.Button(cat_btn_frame, text="Edit", 
+                 command=self.edit_category).pack(side=tk.LEFT, padx=5)
+        tk.Button(cat_btn_frame, text="Delete", 
+                 command=self.delete_category).pack(side=tk.LEFT, padx=5)
 
         # Variables list section
         var_section = tk.Frame(main_frame)
@@ -89,9 +106,12 @@ class ConfigGUI(tk.Tk):
         # Variable buttons
         var_btn_frame = tk.Frame(var_section)
         var_btn_frame.pack(pady=5)
-        tk.Button(var_btn_frame, text="Add", command=self.add_variable).pack(side=tk.LEFT, padx=5)
-        tk.Button(var_btn_frame, text="Edit", command=self.edit_variable).pack(side=tk.LEFT, padx=5)
-        tk.Button(var_btn_frame, text="Delete", command=self.delete_variable).pack(side=tk.LEFT, padx=5)
+        tk.Button(var_btn_frame, text="Add", 
+                 command=self.add_variable).pack(side=tk.LEFT, padx=5)
+        tk.Button(var_btn_frame, text="Edit", 
+                 command=self.edit_variable).pack(side=tk.LEFT, padx=5)
+        tk.Button(var_btn_frame, text="Delete", 
+                 command=self.delete_variable).pack(side=tk.LEFT, padx=5)
 
         # Populate listboxes
         self.refresh_categories()
@@ -119,7 +139,8 @@ class ConfigGUI(tk.Tk):
 
     def toggle_monitoring(self):
         """Toggle the monitoring on/off."""
-        is_running = self.monitor_process and self.monitor_process.poll() is None
+        is_running = (self.monitor_process and 
+                     self.monitor_process.poll() is None)
         if not is_running:
             self.start_monitoring()
         else:
@@ -128,16 +149,19 @@ class ConfigGUI(tk.Tk):
     def start_monitoring(self):
         """Start the file monitoring in a separate process."""
         # Check if folder is selected
-        if self.config_data["watched_folder"] == "SELECT FOLDER" or not self.config_data["watched_folder"]:
-            messagebox.showwarning("No Folder Selected", 
-                                 "Please select a folder to monitor before starting.")
+        if (self.config_data["watched_folder"] == "SELECT FOLDER" or 
+            not self.config_data["watched_folder"]):
+            messagebox.showwarning(
+                "No Folder Selected", 
+                "Please select a folder to monitor before starting.")
             return
         
         # Check if folder exists
         folder_path = Path(self.config_data["watched_folder"])
         if not folder_path.exists():
-            result = messagebox.askyesno("Folder Not Found", 
-                                       f"The folder '{folder_path}' does not exist. Create it?")
+            result = messagebox.askyesno(
+                "Folder Not Found", 
+                f"The folder '{folder_path}' does not exist. Create it?")
             if result:
                 folder_path.mkdir(parents=True, exist_ok=True)
             else:
@@ -148,7 +172,8 @@ class ConfigGUI(tk.Tk):
             # Using sys.executable ensures we use the same python interpreter
             # that is running the GUI. This is important for virtual envs.
             # We construct the absolute path to main.py to be safe.
-            main_script_path = Path(__file__).resolve().parent.parent / "main.py"
+            main_script_path = (Path(__file__).resolve().parent.parent / 
+                               "main.py")
             
             self.monitor_process = subprocess.Popen(
                 [sys.executable, str(main_script_path), "monitor"]
@@ -158,13 +183,16 @@ class ConfigGUI(tk.Tk):
             self.status_label.config(text="Running", fg="green")
             self.monitor_button.config(text="Stop Monitoring", bg="red")
             
-            messagebox.showinfo("Monitoring Started", 
-                              f"File monitoring started for folder:\n{self.config_data['watched_folder']}")
+            messagebox.showinfo(
+                "Monitoring Started", 
+                f"File monitoring started for folder:\n"
+                f"{self.config_data['watched_folder']}")
         except Exception as e:
-            messagebox.showerror("Failed to Start", f"Could not start the monitoring process:\n{e}")
+            messagebox.showerror(
+                "Failed to Start", 
+                f"Could not start the monitoring process:\n{e}")
             self.status_label.config(text="Error", fg="red")
             self.monitor_button.config(text="Start Monitoring", bg="green")
-
 
     def stop_monitoring(self):
         """Stop the file monitoring process."""
@@ -184,28 +212,31 @@ class ConfigGUI(tk.Tk):
         self.status_label.config(text="Stopped", fg="red")
         self.monitor_button.config(text="Start Monitoring", bg="green")
         
-        messagebox.showinfo("Monitoring Stopped", "File monitoring has been stopped.")
+        messagebox.showinfo("Monitoring Stopped", 
+                           "File monitoring has been stopped.")
 
-    # Folder browse
     def browse_folder(self):
+        """Browse and select a folder for monitoring."""
         folder_selected = filedialog.askdirectory()
         if folder_selected:
             self.folder_var.set(folder_selected)
             self.config_data["watched_folder"] = self.folder_var.get().strip()
             save_config(self.config_data)
-            messagebox.showinfo("Config Saved", "Watched folder saved successfully.")
+            messagebox.showinfo("Config Saved", 
+                               "Watched folder saved successfully.")
     
     def prompt_folder_selection(self):
         """Prompt user to select a folder if none is selected."""
         result = messagebox.askyesno(
             "Select Folder", 
-            "No folder is currently selected for monitoring. Would you like to select a folder now?"
+            "No folder is currently selected for monitoring. "
+            "Would you like to select a folder now?"
         )
         if result:
             self.browse_folder()
 
-    # Category operations
     def refresh_categories(self):
+        """Refresh the categories listbox with current data."""
         self.cat_listbox.delete(0, tk.END)
         for cat in self.config_data["categories"]:
             self.cat_listbox.insert(tk.END, cat["name"])
@@ -225,13 +256,16 @@ class ConfigGUI(tk.Tk):
         
         # Prevent editing the "General" category
         if current["name"] == "General":
-            messagebox.showwarning("Protected Item", 
-                                 "The 'General' category cannot be edited as it's required for the application to function properly.")
+            messagebox.showwarning(
+                "Protected Item", 
+                "The 'General' category cannot be edited as it's required "
+                "for the application to function properly.")
             return
         
         self.show_category_form(current, idx)
 
     def delete_category(self):
+        """Delete the selected category."""
         index = self.cat_listbox.curselection()
         if not index:
             messagebox.showinfo("Info", "Select a category to delete.")
@@ -241,21 +275,25 @@ class ConfigGUI(tk.Tk):
         
         # Prevent deleting the "General" category
         if current["name"] == "General":
-            messagebox.showwarning("Protected Item", 
-                                 "The 'General' category cannot be deleted as it's required for the application to function properly.")
+            messagebox.showwarning(
+                "Protected Item", 
+                "The 'General' category cannot be deleted as it's required "
+                "for the application to function properly.")
             return
         
         del self.config_data["categories"][idx]
         self.refresh_categories()
         save_config(self.config_data)
 
-    def show_category_form(self, cat: Dict[str, str] | None = None, index: int | None = None):
+    def show_category_form(self, cat: Dict[str, str] | None = None, 
+                          index: int | None = None):
         """Display the form for adding or editing a category."""
         self.form_view_frame = tk.Frame(self.view_container, padx=10, pady=10)
         self.show_view(self.form_view_frame)
 
         title = "Edit Category" if cat else "Add Category"
-        tk.Label(self.form_view_frame, text=title, font=("Helvetica", 16)).pack(pady=10)
+        tk.Label(self.form_view_frame, text=title, 
+                font=("Helvetica", 16)).pack(pady=10)
 
         # Main container for form and variables list
         editor_frame = tk.Frame(self.form_view_frame)
@@ -268,13 +306,16 @@ class ConfigGUI(tk.Tk):
         fields = {
             "name": tk.StringVar(value=cat["name"] if cat else ""),
             "description": tk.StringVar(value=cat["description"] if cat else ""),
-            "naming_pattern": tk.StringVar(value=cat["naming_pattern"] if cat else ""),
+            "naming_pattern": tk.StringVar(value=cat["naming_pattern"] 
+                                         if cat else ""),
         }
 
         entry_widgets = {}
         row = 0
         for label, var in fields.items():
-            tk.Label(form_fields_frame, text=label.replace("_", " ").capitalize() + ":").grid(row=row, column=0, sticky=tk.W, pady=5)
+            tk.Label(form_fields_frame, 
+                    text=label.replace("_", " ").capitalize() + ":").grid(
+                        row=row, column=0, sticky=tk.W, pady=5)
             if label == "naming_pattern":
                 entry = tk.Text(form_fields_frame, height=2, width=40)
                 entry.insert("1.0", var.get())
@@ -285,9 +326,11 @@ class ConfigGUI(tk.Tk):
             row += 1
 
         naming_pattern_text = entry_widgets["naming_pattern"]
-        naming_pattern_text.tag_configure("variable", background="#e0e0e0", relief="raised")
+        naming_pattern_text.tag_configure("variable", background="#e0e0e0", 
+                                         relief="raised")
 
         def update_tags():
+            """Update syntax highlighting for variables in naming pattern."""
             naming_pattern_text.tag_remove("variable", "1.0", tk.END)
             text = naming_pattern_text.get("1.0", tk.END)
             import re
@@ -301,7 +344,8 @@ class ConfigGUI(tk.Tk):
         # Variables list on the right
         variables_list_frame = tk.Frame(editor_frame, padx=10)
         variables_list_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
-        tk.Label(variables_list_frame, text="Available Variables (click to insert)").pack(anchor=tk.W)
+        tk.Label(variables_list_frame, 
+                text="Available Variables (click to insert)").pack(anchor=tk.W)
 
         var_listbox = tk.Listbox(variables_list_frame, height=8)
         for variable in self.config_data.get("variables", []):
@@ -309,6 +353,7 @@ class ConfigGUI(tk.Tk):
         var_listbox.pack(fill=tk.BOTH, expand=True)
 
         def insert_variable_at_cursor(event):
+            """Insert selected variable at cursor position."""
             selection = var_listbox.curselection()
             if not selection:
                 return
@@ -317,7 +362,7 @@ class ConfigGUI(tk.Tk):
             naming_pattern_entry = entry_widgets["naming_pattern"]
             naming_pattern_entry.insert(tk.INSERT, f"/{{{variable_name}}}")
             update_tags()
-            # Delay focus setting to ensure cursor visibility after the event.
+            # Delay focus setting to ensure cursor visibility after the event
             naming_pattern_entry.after(10, naming_pattern_entry.focus_set)
 
         var_listbox.bind("<<ListboxSelect>>", insert_variable_at_cursor)
@@ -325,8 +370,10 @@ class ConfigGUI(tk.Tk):
         naming_pattern_entry = entry_widgets["naming_pattern"]
 
         def show_variable_suggestions(event):
-            # This function is triggered on any key press in the naming_pattern_entry
-            # We only want to show suggestions if the typed character is "/"
+            """Show variable suggestions when '/' is typed."""
+            # This function is triggered on any key press in the
+            # naming_pattern_entry. We only want to show suggestions
+            # if the typed character is "/"
             if event.char == '/':
                 # Get cursor position
                 cursor_pos = naming_pattern_entry.index(tk.INSERT)
@@ -334,10 +381,13 @@ class ConfigGUI(tk.Tk):
                 # Create a popup menu
                 menu = tk.Menu(self.form_view_frame, tearoff=0)
                 for var in self.config_data.get("variables", []):
-                    menu.add_command(label=var["name"], command=lambda v=var["name"]: insert_variable(f"{{{v}}}"))
+                    menu.add_command(
+                        label=var["name"], 
+                        command=lambda v=var["name"]: insert_variable(f"{{{v}}}"))
 
                 # Position and display the menu
-                x, y = naming_pattern_entry.winfo_rootx(), naming_pattern_entry.winfo_rooty()
+                x, y = (naming_pattern_entry.winfo_rootx(), 
+                       naming_pattern_entry.winfo_rooty())
                 bbox = naming_pattern_entry.bbox(cursor_pos)
                 if bbox:
                     x += bbox[0]
@@ -345,6 +395,7 @@ class ConfigGUI(tk.Tk):
                 menu.post(x, y)
 
         def insert_variable(var_string):
+            """Insert a variable string at the current cursor position."""
             naming_pattern_entry.insert(tk.INSERT, var_string)
             update_tags()
             
@@ -352,18 +403,19 @@ class ConfigGUI(tk.Tk):
         naming_pattern_entry.bind("<Key>", show_variable_suggestions)
         naming_pattern_entry.bind("<KeyRelease>", lambda e: update_tags())
 
-
         def on_save():
             """Save the new/edited category."""
             new_cat = {}
             for label, var in fields.items():
                 if label == "naming_pattern":
-                    new_cat[label] = entry_widgets[label].get("1.0", tk.END).strip()
+                    new_cat[label] = entry_widgets[label].get("1.0", 
+                                                            tk.END).strip()
                 else:
                     new_cat[label] = var.get()
 
             if not new_cat["name"]:
-                messagebox.showerror("Error", "Name is required.", parent=self.form_view_frame)
+                messagebox.showerror("Error", "Name is required.", 
+                                   parent=self.form_view_frame)
                 return
 
             if index is not None:
@@ -378,10 +430,11 @@ class ConfigGUI(tk.Tk):
         btn_frame = tk.Frame(self.form_view_frame)
         btn_frame.pack(pady=20)
         
-        tk.Button(btn_frame, text="Save", command=on_save).pack(side=tk.LEFT, padx=10)
-        tk.Button(btn_frame, text="Cancel", command=self.show_list_view).pack(side=tk.LEFT, padx=10)
+        tk.Button(btn_frame, text="Save", 
+                 command=on_save).pack(side=tk.LEFT, padx=10)
+        tk.Button(btn_frame, text="Cancel", 
+                 command=self.show_list_view).pack(side=tk.LEFT, padx=10)
 
-    # Variable CRUD
     def add_variable(self):
         """Show the form to add a new variable."""
         self.show_variable_form()
@@ -397,13 +450,16 @@ class ConfigGUI(tk.Tk):
         
         # Prevent editing the "original_name" variable
         if current["name"] == "original_name":
-            messagebox.showwarning("Protected Item", 
-                                 "The 'original_name' variable cannot be edited as it's required for the application to function properly.")
+            messagebox.showwarning(
+                "Protected Item", 
+                "The 'original_name' variable cannot be edited as it's "
+                "required for the application to function properly.")
             return
         
         self.show_variable_form(current, idx)
 
     def delete_variable(self):
+        """Delete the selected variable."""
         index = self.var_listbox.curselection()
         if not index:
             messagebox.showinfo("Info", "Select a variable to delete.")
@@ -413,21 +469,25 @@ class ConfigGUI(tk.Tk):
         
         # Prevent deleting the "original_name" variable
         if current["name"] == "original_name":
-            messagebox.showwarning("Protected Item", 
-                                 "The 'original_name' variable cannot be deleted as it's required for the application to function properly.")
+            messagebox.showwarning(
+                "Protected Item", 
+                "The 'original_name' variable cannot be deleted as it's "
+                "required for the application to function properly.")
             return
 
         del self.config_data["variables"][idx]
         self.refresh_variables()
         save_config(self.config_data)
 
-    def show_variable_form(self, var: Dict[str, str] | None = None, index: int | None = None):
+    def show_variable_form(self, var: Dict[str, str] | None = None, 
+                          index: int | None = None):
         """Display the form for adding or editing a variable."""
         self.form_view_frame = tk.Frame(self.view_container, padx=10, pady=10)
         self.show_view(self.form_view_frame)
 
         title = "Edit Variable" if var else "Add Variable"
-        tk.Label(self.form_view_frame, text=title, font=("Helvetica", 16)).pack(pady=10)
+        tk.Label(self.form_view_frame, text=title, 
+                font=("Helvetica", 16)).pack(pady=10)
 
         fields = {
             "name": tk.StringVar(value=var["name"] if var else ""),
@@ -439,14 +499,19 @@ class ConfigGUI(tk.Tk):
 
         row = 0
         for label, var_str in fields.items():
-            tk.Label(form_fields_frame, text=label.capitalize() + ":").grid(row=row, column=0, sticky=tk.W, pady=5, padx=5)
-            tk.Entry(form_fields_frame, textvariable=var_str, width=50).grid(row=row, column=1, pady=5, padx=5)
+            tk.Label(form_fields_frame, 
+                    text=label.capitalize() + ":").grid(
+                        row=row, column=0, sticky=tk.W, pady=5, padx=5)
+            tk.Entry(form_fields_frame, textvariable=var_str, 
+                    width=50).grid(row=row, column=1, pady=5, padx=5)
             row += 1
 
         def on_save():
+            """Save the new/edited variable."""
             vals = {k: v.get().strip() for k, v in fields.items()}
             if not vals["name"]:
-                messagebox.showerror("Error", "Name is required.", parent=self.form_view_frame)
+                messagebox.showerror("Error", "Name is required.", 
+                                   parent=self.form_view_frame)
                 return
 
             if index is not None:
@@ -461,13 +526,17 @@ class ConfigGUI(tk.Tk):
         btn_frame = tk.Frame(self.form_view_frame)
         btn_frame.pack(pady=20)
         
-        tk.Button(btn_frame, text="Save", command=on_save).pack(side=tk.LEFT, padx=10)
-        tk.Button(btn_frame, text="Cancel", command=self.show_list_view).pack(side=tk.LEFT, padx=10)
+        tk.Button(btn_frame, text="Save", 
+                 command=on_save).pack(side=tk.LEFT, padx=10)
+        tk.Button(btn_frame, text="Cancel", 
+                 command=self.show_list_view).pack(side=tk.LEFT, padx=10)
 
     def refresh_variables(self):
+        """Refresh the variables listbox with current data."""
         self.var_listbox.delete(0, tk.END)
         for var in self.config_data.get("variables", []):
             self.var_listbox.insert(tk.END, var["name"])
+
 
 def main():
     """Main entry point for the GUI application."""
