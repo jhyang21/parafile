@@ -25,6 +25,65 @@ if not os.getenv("OPENAI_API_KEY"):
         "OPENAI_API_KEY not set. Please configure your environment or .env file.")
 
 
+
+# TODO
+
+# Create a document object with the following attributes:
+# - original name
+# - category
+# - suggested_name
+
+# function to Categorize the document based on the categories and descriptions defined by the user
+# given the document text and categories
+def categorize_document(document_text: str, categories: List[Dict[str, str]]) -> str:
+    """
+    Categorize the document based on the categories and descriptions defined by the user
+    """
+    
+    system_prompt = """
+    You are an expert file organization assistant. Your task is to analyze the text 
+    of a document and classify it into one of the user's custom categories based on 
+    their descriptions.
+
+    You must return a JSON object with the following keys:
+    - category: The name of the category that the document belongs to
+    - reasoning: A short explanation of why you chose the category  
+    - confidence: A number between 0 and 100 that represents how confident you are in your choice
+
+    Here are the user's categories and their descriptions:
+
+    ---
+    """ + f"{categories}\n    ---\n"
+    
+    user_prompt = "Document Text:\n\"\"\"\n" + f"{document_text}\n\"\"\"\n\n"
+    
+    response = client.chat.completions.create(
+        model="gpt-4.1-2025-04-14",
+        messages=[{"role": "system", "content": system_prompt}, 
+                  {"role": "user", "content": user_prompt}],
+        response_format={
+            "type": "json_object",
+            "json_schema": {
+                "category": "string",
+                "reasoning": "string",
+                "confidence": "number"
+            }
+        },
+        max_tokens=256,
+        temperature=0.2,
+    )
+
+    content = response.choices[0].message.content.strip()
+    
+# Function to Use the naming pattern to generate a suggested name for the document
+
+# Function to Retrieve naming pattern from the categories list given the document
+
+# Function to Generate dynamic JSON schema for the document based on the naming pattern
+
+# Function to Use the JSON schema with the openai API to generate a suggested name for the document
+
+
 def _build_prompt(categories: List[Dict[str, str]], 
                   variables: List[Dict[str, str]], 
                   document_text: str) -> str:
@@ -139,3 +198,7 @@ def get_ai_filename_suggestion(document_text: str,
 
 
 __all__ = ["get_ai_filename_suggestion"] 
+
+
+
+
