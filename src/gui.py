@@ -30,7 +30,7 @@ from typing import Dict, List
 import tkinter as tk
 from tkinter import filedialog, messagebox, simpledialog
 
-from config_manager import load_config, save_config
+from config_manager import load_config, save_config_from_parts
 
 
 class ConfigGUI(tk.Tk):
@@ -46,7 +46,9 @@ class ConfigGUI(tk.Tk):
     as needed, providing a smooth user experience.
     
     Attributes:
-        config_data: Current configuration dictionary
+        watched_folder: Current watched folder path
+        categories: Categories dict with name as key
+        variables: Variables dict with name as key
         monitor_process: Subprocess handle for the monitoring service
         current_view: Reference to the currently active view frame
         view_container: Main container for swapping views
@@ -65,7 +67,8 @@ class ConfigGUI(tk.Tk):
         self.title("File Organizer Settings")
         self.geometry("600x600")
 
-        self.config_data = load_config()
+        # Load configuration as separate objects
+        self.watched_folder, self.categories, self.variables = load_config()
         self.monitor_process: subprocess.Popen | None = None
         self.current_view = None
 
@@ -77,8 +80,8 @@ class ConfigGUI(tk.Tk):
         self.show_list_view()
             
         # Prompt for folder selection if none configured
-        if (self.config_data["watched_folder"] == "SELECT FOLDER" or 
-            not self.config_data["watched_folder"]):
+        if (self.watched_folder == "SELECT FOLDER" or 
+            not self.watched_folder):
             self.prompt_folder_selection()
             
         # Ensure proper cleanup on window close to prevent orphaned processes
@@ -107,7 +110,7 @@ class ConfigGUI(tk.Tk):
 
         # Folder selection label and entry
         tk.Label(folder_frame, text="Watched Folder:").pack(side=tk.LEFT)
-        self.folder_var = tk.StringVar(value=self.config_data["watched_folder"])
+        self.folder_var = tk.StringVar(value=self.watched_folder)
         self.folder_entry = tk.Entry(folder_frame, textvariable=self.folder_var, 
                                     width=50)
         self.folder_entry.pack(side=tk.LEFT, padx=5)
@@ -255,14 +258,14 @@ class ConfigGUI(tk.Tk):
         The monitoring runs as a separate process to avoid blocking the GUI
         and to allow the user to continue configuring while monitoring runs.
         """
-        if (self.config_data["watched_folder"] == "SELECT FOLDER" or 
-            not self.config_data["watched_folder"]):
+        if (self.watched_folder == "SELECT FOLDER" or 
+            not self.watched_folder):
             messagebox.showwarning(
                 "No Folder Selected", 
                 "Please select a folder to monitor before starting.")
             return
         
-        folder_path = Path(self.config_data["watched_folder"])
+        folder_path = Path(self.watched_folder)
         if not folder_path.exists():
             result = messagebox.askyesno(
                 "Folder Not Found", 
@@ -287,7 +290,7 @@ class ConfigGUI(tk.Tk):
             messagebox.showinfo(
                 "Monitoring Started", 
                 f"File monitoring started for folder:\n"
-                f"{self.config_data['watched_folder']}")
+                f"{self.watched_folder}")
                 
         except Exception as e:
             messagebox.showerror(
@@ -332,8 +335,8 @@ class ConfigGUI(tk.Tk):
         
         if folder_selected:
             self.folder_var.set(folder_selected)
-            self.config_data["watched_folder"] = self.folder_var.get().strip()
-            save_config(self.config_data)
+            self.watched_folder = self.folder_var.get().strip()
+            save_config_from_parts(self.watched_folder, self.categories, self.variables)
             messagebox.showinfo("Config Saved", 
                                "Watched folder saved successfully.")
     
@@ -365,8 +368,8 @@ class ConfigGUI(tk.Tk):
         self.cat_listbox.delete(0, tk.END)
         
         # Populate with current categories
-        for cat in self.config_data["categories"]:
-            self.cat_listbox.insert(tk.END, cat["name"])
+        for cat_name in self.categories:
+            self.cat_listbox.insert(tk.END, cat_name)
 
     def add_category(self):
         """
@@ -392,7 +395,9 @@ class ConfigGUI(tk.Tk):
             return
             
         idx = index[0]
-        current = self.config_data["categories"][idx]
+        cat_names = list(self.categories.keys())
+        current_name = cat_names[idx]
+        current = {"name": current_name, **self.categories[current_name]}
         
         # Prevent editing the required "General" category
         # This category is essential for the application's fallback behavior
@@ -421,10 +426,11 @@ class ConfigGUI(tk.Tk):
             return
             
         idx = index[0]
-        current = self.config_data["categories"][idx]
+        cat_names = list(self.categories.keys())
+        current_name = cat_names[idx]
         
         # Prevent deletion of the required "General" category
-        if current["name"] == "General":
+        if current_name == "General":
             messagebox.showwarning(
                 "Protected Item", 
                 "The 'General' category cannot be deleted as it's required "
@@ -432,9 +438,9 @@ class ConfigGUI(tk.Tk):
             return
         
         # Remove the category and update the display
-        del self.config_data["categories"][idx]
+        del self.categories[current_name]
         self.refresh_categories()
-        save_config(self.config_data)
+        save_config_from_parts(self.watched_folder, self.categories, self.variables)
 
     def show_category_form(self, cat: Dict[str, str] | None = None, 
                           index: int | None = None):
@@ -531,8 +537,8 @@ class ConfigGUI(tk.Tk):
                 text="Available Variables (click to insert)").pack(anchor=tk.W)
 
         var_listbox = tk.Listbox(variables_list_frame, height=8)
-        for variable in self.config_data.get("variables", []):
-            var_listbox.insert(tk.END, variable["name"])
+        for var_name in self.variables:
+            var_listbox.insert(tk.END, var_name)
         var_listbox.pack(fill=tk.BOTH, expand=True)
 
         def insert_variable_at_cursor(event):
@@ -577,10 +583,10 @@ class ConfigGUI(tk.Tk):
                 
                 # Create popup menu with variable options
                 menu = tk.Menu(self.form_view_frame, tearoff=0)
-                for var in self.config_data.get("variables", []):
+                for var_name in self.variables:
                     menu.add_command(
-                        label=var["name"], 
-                        command=lambda v=var["name"]: insert_variable(f"{{{v}}}"))
+                        label=var_name, 
+                        command=lambda v=var_name: insert_variable(f"{{{v}}}"))
 
                 # Calculate menu position relative to cursor
                 x, y = (naming_pattern_entry.winfo_rootx(), 
@@ -633,13 +639,26 @@ class ConfigGUI(tk.Tk):
             # Update configuration based on mode (add vs edit)
             if index is not None:
                 # Edit mode: update existing category
-                self.config_data["categories"][index] = new_cat
+                cat_names = list(self.categories.keys())
+                old_name = cat_names[index]
+                
+                # If name changed, remove old entry and add new one
+                if old_name != new_cat["name"]:
+                    del self.categories[old_name]
+                
+                self.categories[new_cat["name"]] = {
+                    "description": new_cat["description"],
+                    "naming_pattern": new_cat["naming_pattern"]
+                }
             else:
                 # Add mode: append new category
-                self.config_data["categories"].append(new_cat)
+                self.categories[new_cat["name"]] = {
+                    "description": new_cat["description"],
+                    "naming_pattern": new_cat["naming_pattern"]
+                }
             
             # Save configuration and update display
-            save_config(self.config_data)
+            save_config_from_parts(self.watched_folder, self.categories, self.variables)
             self.refresh_categories()
             self.show_list_view()
 
@@ -677,7 +696,9 @@ class ConfigGUI(tk.Tk):
             return
             
         idx = index[0]
-        current = self.config_data["variables"][idx]
+        var_names = list(self.variables.keys())
+        current_name = var_names[idx]
+        current = {"name": current_name, "description": self.variables[current_name]}
         
         # Prevent editing the required "original_name" variable
         # This variable is essential for basic filename preservation
@@ -706,10 +727,11 @@ class ConfigGUI(tk.Tk):
             return
             
         idx = index[0]
-        current = self.config_data["variables"][idx]
+        var_names = list(self.variables.keys())
+        current_name = var_names[idx]
         
         # Prevent deletion of the required "original_name" variable
-        if current["name"] == "original_name":
+        if current_name == "original_name":
             messagebox.showwarning(
                 "Protected Item", 
                 "The 'original_name' variable cannot be deleted as it's "
@@ -717,9 +739,9 @@ class ConfigGUI(tk.Tk):
             return
 
         # Remove the variable and update the display
-        del self.config_data["variables"][idx]
+        del self.variables[current_name]
         self.refresh_variables()
-        save_config(self.config_data)
+        save_config_from_parts(self.watched_folder, self.categories, self.variables)
 
     def show_variable_form(self, var: Dict[str, str] | None = None, 
                           index: int | None = None):
@@ -784,13 +806,20 @@ class ConfigGUI(tk.Tk):
             # Update configuration based on mode (add vs edit)
             if index is not None:
                 # Edit mode: update existing variable
-                self.config_data["variables"][index] = vals
+                var_names = list(self.variables.keys())
+                old_name = var_names[index]
+                
+                # If name changed, remove old entry
+                if old_name != vals["name"]:
+                    del self.variables[old_name]
+                    
+                self.variables[vals["name"]] = vals["description"]
             else:
-                # Add mode: append new variable (ensure variables list exists)
-                self.config_data.setdefault("variables", []).append(vals)
+                # Add mode: append new variable
+                self.variables[vals["name"]] = vals["description"]
 
             # Save configuration and update display
-            save_config(self.config_data)
+            save_config_from_parts(self.watched_folder, self.categories, self.variables)
             self.refresh_variables()
             self.show_list_view()
         
@@ -816,8 +845,8 @@ class ConfigGUI(tk.Tk):
         self.var_listbox.delete(0, tk.END)
         
         # Populate with current variables
-        for var in self.config_data.get("variables", []):
-            self.var_listbox.insert(tk.END, var["name"])
+        for var_name in self.variables:
+            self.var_listbox.insert(tk.END, var_name)
 
 
 def main():

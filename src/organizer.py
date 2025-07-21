@@ -17,7 +17,7 @@ import logging
 import shutil
 import time
 from pathlib import Path
-from typing import List
+from typing import List, Dict
 
 from watchdog.events import FileSystemEventHandler, FileCreatedEvent
 from watchdog.observers import Observer
@@ -61,16 +61,19 @@ class DocumentHandler(FileSystemEventHandler):
     common file access issues like temporary locks or permission problems.
     """
 
-    def __init__(self, config):
+    def __init__(self, watched_folder: str, categories: Dict[str, Dict[str, str]], variables: Dict[str, str]):
         """
         Initialize the document handler with configuration.
         
         Args:
-            config: Configuration dictionary containing categories, variables,
-                   and watched folder information
+            watched_folder: Path to the monitored folder
+            categories: Categories dict with name as key
+            variables: Variables dict with name as key
         """
         super().__init__()
-        self.config = config
+        self.watched_folder = watched_folder
+        self.categories = categories
+        self.variables = variables
 
     def on_created(self, event: FileCreatedEvent):
         """
@@ -139,17 +142,35 @@ class DocumentHandler(FileSystemEventHandler):
                 else:  # .docx
                     document_text = extract_text_from_docx(filepath)
 
+                # Convert categories and variables to the format expected by AI processor
+                categories_list = [
+                    {
+                        "name": name,
+                        "description": details["description"],
+                        "naming_pattern": details["naming_pattern"]
+                    }
+                    for name, details in self.categories.items()
+                ]
+                
+                variables_list = [
+                    {
+                        "name": name,
+                        "description": description
+                    }
+                    for name, description in self.variables.items()
+                ]
+
                 # Get AI-powered categorization and naming suggestion
                 category, suggested_name = get_ai_filename_suggestion(
                     document_text, 
-                    self.config["categories"], 
-                    self.config.get("variables", []))
+                    categories_list,
+                    variables_list)
                     
                 logger.info(f"AI suggestion: category='{category}', "
                            f"name='{suggested_name}'")
 
                 # Prepare target location for the organized file
-                base_folder = Path(self.config["watched_folder"])
+                base_folder = Path(self.watched_folder)
                 category_folder = ensure_category_folder(base_folder, category)
 
                 # Construct new filename, preserving original extension
@@ -189,7 +210,7 @@ class DocumentHandler(FileSystemEventHandler):
                 break
 
 
-def start_observer(config):
+def start_observer(watched_folder: str = None, categories: Dict[str, Dict[str, str]] = None, variables: Dict[str, str] = None):
     """
     Start the file system observer for monitoring the configured folder.
     
@@ -198,7 +219,9 @@ def start_observer(config):
     and creates the watch folder if needed.
     
     Args:
-        config: Configuration dictionary with watched_folder and other settings
+        watched_folder: Path to the monitored folder (optional, loads from config if None)
+        categories: Categories dict with name as key (optional, loads from config if None)
+        variables: Variables dict with name as key (optional, loads from config if None)
         
     Returns:
         Observer: The started watchdog observer instance
@@ -206,7 +229,10 @@ def start_observer(config):
     Raises:
         ValueError: If watched_folder is not configured or doesn't exist
     """
-    watched_folder = config.get("watched_folder")
+    # Load configuration if not provided
+    if watched_folder is None or categories is None or variables is None:
+        watched_folder, categories, variables = load_config()
+    
     if not watched_folder or watched_folder == "SELECT FOLDER":
         raise ValueError("No watched folder configured. Please set up configuration first.")
     
@@ -217,7 +243,7 @@ def start_observer(config):
         logger.info(f"Created watched folder: {folder_path}")
 
     # Set up and start the file system observer
-    event_handler = DocumentHandler(config)
+    event_handler = DocumentHandler(watched_folder, categories, variables)
     observer = Observer()
     observer.schedule(event_handler, str(folder_path), recursive=False)
     observer.start()
@@ -228,4 +254,37 @@ def start_observer(config):
     return observer
 
 
-__all__ = ["start_observer", "SUPPORTED_EXTENSIONS"] 
+def main():
+    """
+    Main entry point for the file organizer service.
+    
+    Loads configuration and starts the file monitoring system. This function
+    is called when the organizer is launched in monitor mode from main.py.
+    """
+    try:
+        # Load configuration
+        watched_folder, categories, variables = load_config()
+        
+        # Start the monitoring service
+        observer = start_observer(watched_folder, categories, variables)
+        
+        # Keep the process running
+        while True:
+            time.sleep(1)
+            
+    except KeyboardInterrupt:
+        # Handle Ctrl+C gracefully
+        logger.info("Stopping observer...")
+        observer.stop()
+        
+    except Exception as e:
+        logger.error(f"Failed to start monitoring: {e}")
+        print(f"ERROR: {e}")
+        print("Please run 'python main.py gui' to configure the application.")
+        return
+        
+    # Wait for observer thread to finish cleanup
+    observer.join()
+
+
+__all__ = ["start_observer", "SUPPORTED_EXTENSIONS", "main"] 

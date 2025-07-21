@@ -18,7 +18,7 @@ configuration files that may be missing required elements.
 """
 import json
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Tuple
 
 CONFIG_FILE = Path(__file__).resolve().parent.parent / "config.json"
 
@@ -29,8 +29,8 @@ DEFAULT_CONFIG = {
     "categories": [
         {
             "name": "General",
-            "description": "Default category when no other categories match.",
             "naming_pattern": "{original_name}",
+            "description": "Default category when no other rules match."
         }
     ],
     "variables": [
@@ -42,7 +42,7 @@ DEFAULT_CONFIG = {
 }
 
 
-def load_config() -> Dict[str, Any]:
+def load_config() -> Tuple[str, Dict[str, Dict[str, str]], Dict[str, str]]:
     """
     Load configuration from the JSON file with validation and auto-repair.
 
@@ -53,15 +53,19 @@ def load_config() -> Dict[str, Any]:
     4. Auto-saves repaired configurations
     
     Returns:
-        Dict[str, Any]: Complete configuration dictionary with all required fields
+        Tuple containing:
+        - watched_folder_location (str): Path to the monitored folder
+        - categories (Dict[str, Dict[str, str]]): Categories with name as key, 
+          value contains description and naming_pattern
+        - variables (Dict[str, str]): Variables with name as key, description as value
         
     Note:
-        This function never raises exceptions. It will always return a valid
-        configuration, creating or repairing files as needed.
+        This function never raises exceptions. It will always return valid
+        configuration data, creating or repairing files as needed.
     """
     if not CONFIG_FILE.exists():
         save_config(DEFAULT_CONFIG)
-        return DEFAULT_CONFIG.copy()
+        return _transform_config(DEFAULT_CONFIG)
 
     try:
         with CONFIG_FILE.open("r", encoding="utf-8") as fp:
@@ -69,7 +73,7 @@ def load_config() -> Dict[str, Any]:
     except (json.JSONDecodeError, OSError):
         # Reset to default configuration for corrupted or unreadable files
         save_config(DEFAULT_CONFIG)
-        return DEFAULT_CONFIG.copy()
+        return _transform_config(DEFAULT_CONFIG)
 
     # Validate and repair configuration structure
     updated = False
@@ -108,7 +112,35 @@ def load_config() -> Dict[str, Any]:
     if updated:
         save_config(data)
         
-    return data
+    return _transform_config(data)
+
+
+def _transform_config(data: Dict[str, Any]) -> Tuple[str, Dict[str, Dict[str, str]], Dict[str, str]]:
+    """
+    Transform the raw configuration data into the desired return format.
+    
+    Args:
+        data: Raw configuration dictionary from JSON
+        
+    Returns:
+        Tuple of (watched_folder, categories_dict, variables_dict)
+    """
+    watched_folder = data.get("watched_folder", "SELECT FOLDER")
+    
+    # Transform categories list into dict with name as key
+    categories = {}
+    for cat in data.get("categories", []):
+        categories[cat["name"]] = {
+            "description": cat["description"],
+            "naming_pattern": cat["naming_pattern"]
+        }
+    
+    # Transform variables list into dict with name as key
+    variables = {}
+    for var in data.get("variables", []):
+        variables[var["name"]] = var["description"]
+    
+    return watched_folder, categories, variables
 
 
 def save_config(config: Dict[str, Any]) -> None:
@@ -129,4 +161,38 @@ def save_config(config: Dict[str, Any]) -> None:
         raise RuntimeError(f"Failed to write configuration file: {exc}")
 
 
-__all__ = ["load_config", "save_config", "CONFIG_FILE"] 
+def save_config_from_parts(watched_folder: str, 
+                          categories: Dict[str, Dict[str, str]], 
+                          variables: Dict[str, str]) -> None:
+    """
+    Save configuration from the 3-part format back to JSON file.
+    
+    Args:
+        watched_folder: Path to the monitored folder
+        categories: Categories dict with name as key
+        variables: Variables dict with name as key
+    """
+    # Convert back to the original format
+    config = {
+        "watched_folder": watched_folder,
+        "categories": [
+            {
+                "name": name,
+                "description": details["description"],
+                "naming_pattern": details["naming_pattern"]
+            }
+            for name, details in categories.items()
+        ],
+        "variables": [
+            {
+                "name": name,
+                "description": description
+            }
+            for name, description in variables.items()
+        ]
+    }
+    
+    save_config(config)
+
+
+__all__ = ["load_config", "save_config", "save_config_from_parts", "CONFIG_FILE"] 
