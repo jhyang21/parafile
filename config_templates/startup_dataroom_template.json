@@ -1,0 +1,116 @@
+{
+    "watched_folder": "SELECT FOLDER",
+    "categories": [
+      {
+        "name": "00 - README & Index",
+        "naming_pattern": "{date}_DataRoom_Index_{version}",
+        "description": "A map of the data room contents and contact details for questions."
+      },
+      {
+        "name": "01 - Company Overview",
+        "naming_pattern": "{company_name}_{doc_type}_{version}",
+        "description": "High-level documents that explain what the company does and why it's a compelling investment."
+      },
+      {
+        "name": "02 - Corporate & Cap Table",
+        "naming_pattern": "{company_name}_{doc_type}_{version}",
+        "description": "Core legal documents defining the company structure, ownership, and stock plans."
+      },
+      {
+        "name": "03 - Prior Financings & Board",
+        "naming_pattern": "{date}_{agreement_type}_{doc_type}_{version}",
+        "description": "Agreements from previous funding rounds and records of board decisions."
+      },
+      {
+        "name": "04 - Financials",
+        "naming_pattern": "{date}_{company_name}_{doc_type}_{report_period}_{version}",
+        "description": "Historical and projected financial statements to assess business health and realism of forecasts."
+      },
+      {
+        "name": "05 - Key Metrics & KPIs",
+        "naming_pattern": "{date}_{doc_type}_{report_period}_{version}",
+        "description": "Data showing revenue efficiency, customer retention, and business performance."
+      },
+      {
+        "name": "06 - Product & Technology",
+        "naming_pattern": "{company_name}_{doc_type}_{version}",
+        "description": "Information on the technology stack, product roadmap, and security posture."
+      },
+      {
+        "name": "07 - Intellectual Property",
+        "naming_pattern": "{date}_{agreement_type}_IP_{doc_type}_{version}",
+        "description": "Documents proving ownership of intellectual property."
+      },
+      {
+        "name": "08 - Customers & Revenue",
+        "naming_pattern": "{date}_{doc_type}_{version}",
+        "description": "Evidence of current and future revenue, including contracts and sales pipeline."
+      },
+      {
+        "name": "09 - Go-to-Market",
+        "naming_pattern": "{company_name}_{doc_type}_{version}",
+        "description": "Strategy and materials related to sales, marketing, and customer acquisition."
+      },
+      {
+        "name": "10 - Human Resources",
+        "naming_pattern": "{date}_{doc_type}_{employee_name}_{version}",
+        "description": "Information about the team, organizational structure, and hiring plans."
+      },
+      {
+        "name": "11 - Legal & Compliance",
+        "naming_pattern": "{date}_{agreement_type}_{doc_type}_{version}",
+        "description": "Contracts, insurance, and compliance documents to identify hidden risks."
+      },
+      {
+        "name": "12 - Operations & Policies",
+        "naming_pattern": "{company_name}_Policy_{doc_type}_{version}",
+        "description": "Internal plans and policies for data security, disaster recovery, and operations."
+      },
+      {
+        "name": "13 - Investor Communications",
+        "naming_pattern": "{date}_InvestorUpdate_{doc_type}_{version}",
+        "description": "Past investor updates and board decks demonstrating management transparency."
+      },
+      {
+        "name": "14 - Use of Funds & Milestones",
+        "naming_pattern": "{company_name}_UseOfFunds_{version}",
+        "description": "Plans detailing how the raised capital will be allocated to achieve key milestones."
+      },
+      {
+        "name": "15 - Reference Materials",
+        "naming_pattern": "{date}_{doc_type}_{version}",
+        "description": "Third-party validation including press, analyst notes, and customer references."
+      }
+    ],
+    "variables": [
+      {
+        "name": "date",
+        "description": "The date of the document in YYYY-MM-DD format."
+      },
+      {
+        "name": "company_name",
+        "description": "The legal name of your company."
+      },
+      {
+        "name": "doc_type",
+        "description": "The specific type of the document (e.g., PitchDeck, PnL, CapTable, MSA)."
+      },
+      {
+        "name": "version",
+        "description": "A version number or identifier (e.g., v1, v2.1, final)."
+      },
+      {
+        "name": "agreement_type",
+        "description": "The type of legal agreement (e.g., NDA, SAFE, Note)."
+      },
+      {
+        "name": "employee_name",
+        "description": "The full name of an employee or contractor."
+      },
+      {
+        "name": "report_period",
+        "description": "The reporting period for a financial document or metric (e.g., Q2-2025)."
+      }
+    ]
+  }
+  
