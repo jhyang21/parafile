@@ -12,7 +12,8 @@ variables or .env file as OPENAI_API_KEY.
 """
 import json
 import os
-from typing import Dict, Tuple
+import re
+from typing import Dict, List, Tuple
 
 from openai import OpenAI
 from dotenv import load_dotenv
@@ -83,6 +84,40 @@ def categorize_document(document_text: str, categories: Dict[str, Dict[str, str]
     response_dict = json.loads(response_json)
     
     return response_dict
+
+
+def parse_naming_pattern(naming_pattern: str) -> List[str]:
+    """
+    Parse a naming pattern string and extract all variable placeholders.
+    
+    This function identifies all variable placeholders in a naming pattern
+    using the format {variable_name} and returns a list of the variable names.
+    This is useful for determining which variables need to be extracted from
+    a document to generate a complete filename.
+    
+    Args:
+        naming_pattern: The naming pattern string containing variable placeholders
+                       in the format {variable_name}
+        
+    Returns:
+        List[str]: List of variable names found in the pattern, without the braces
+        
+    Examples:
+        >>> parse_naming_pattern("{date}_{company}_{document_type}.pdf")
+        ['date', 'company', 'document_type']
+        
+        >>> parse_naming_pattern("report_{year}_{month}.docx")
+        ['year', 'month']
+        
+        >>> parse_naming_pattern("simple_filename.txt")
+        []
+    """
+    # Use regex to find all occurrences of {variable_name} pattern
+    pattern = r'\{([^}]+)\}'
+    matches = re.findall(pattern, naming_pattern)
+    
+    # Return list of variable names (content inside braces)
+    return matches
 
 
 def get_naming_pattern(category: str, categories: Dict[str, Dict[str, str]]) -> str:
@@ -213,7 +248,7 @@ def get_ai_filename_suggestion(document_text: str,
         return "General", "unnamed_file"
 
 
-__all__ = ["get_ai_filename_suggestion", "categorize_document", "get_naming_pattern"] 
+__all__ = ["get_ai_filename_suggestion", "categorize_document", "get_naming_pattern", "parse_naming_pattern"] 
 
 
 
