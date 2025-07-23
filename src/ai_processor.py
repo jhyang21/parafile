@@ -12,7 +12,7 @@ variables or .env file as OPENAI_API_KEY.
 """
 import json
 import os
-from typing import List, Dict, Tuple
+from typing import Dict, Tuple
 
 from openai import OpenAI
 from dotenv import load_dotenv
@@ -25,20 +25,26 @@ if not os.getenv("OPENAI_API_KEY"):
         "OPENAI_API_KEY not set. Please configure your environment or .env file.")
 
 
-
-# TODO
-
-# Create a document object with the following attributes:
-# - original name
-# - category
-# - suggested_name
-
-# function to Categorize the document based on the categories and descriptions defined by the user
-# given the document text and categories
-def categorize_document(document_text: str, categories: List[Dict[str, str]]) -> str:
+def categorize_document(document_text: str, categories: Dict[str, Dict[str, str]]) -> str:
     """
-    Categorize the document based on the categories and descriptions defined by the user
+    Categorize the document based on the categories and descriptions defined by the user.
+    
+    Args:
+        document_text: The extracted text content from the document
+        categories: Categories dict with name as key, value contains description and naming_pattern
+        
+    Returns:
+        str: The name of the category that best matches the document
     """
+    
+    # Convert categories dict to list format for the prompt
+    categories_list = []
+    for name, details in categories.items():
+        categories_list.append({
+            "name": name,
+            "description": details["description"],
+            "naming_pattern": details["naming_pattern"]
+        })
     
     system_prompt = """
     You are an expert file organization assistant. Your task is to analyze the text 
@@ -53,7 +59,7 @@ def categorize_document(document_text: str, categories: List[Dict[str, str]]) ->
     Here are the user's categories and their descriptions:
 
     ---
-    """ + f"{categories}\n    ---\n"
+    """ + f"{categories_list}\n    ---\n"
     
     user_prompt = "Document Text:\n\"\"\"\n" + f"{document_text}\n\"\"\"\n\n"
     
@@ -73,19 +79,30 @@ def categorize_document(document_text: str, categories: List[Dict[str, str]]) ->
         temperature=0.2,
     )
 
-    content = response.choices[0].message.content.strip()
+    response_json = response.choices[0].message.content.strip()
+    response_dict = json.loads(response_json)
     
-# Function to Use the naming pattern to generate a suggested name for the document
-
-# Function to Retrieve naming pattern from the categories list given the document
-
-# Function to Generate dynamic JSON schema for the document based on the naming pattern
-
-# Function to Use the JSON schema with the openai API to generate a suggested name for the document
+    return response_dict
 
 
-def _build_prompt(categories: List[Dict[str, str]], 
-                  variables: List[Dict[str, str]], 
+def get_naming_pattern(category: str, categories: Dict[str, Dict[str, str]]) -> str:
+    """
+    Retrieve the naming pattern from the categories dict given the category name.
+    
+    Args:
+        category: Name of the category to look up
+        categories: Categories dict with name as key, value contains description and naming_pattern
+        
+    Returns:
+        str: The naming pattern for the category, or None if not found
+    """
+    if category in categories:
+        return categories[category]['naming_pattern']
+    return None
+
+
+def _build_prompt(categories: Dict[str, Dict[str, str]], 
+                  variables: Dict[str, str], 
                   document_text: str) -> str:
     """
     Construct the prompt to be sent to the OpenAI API.
@@ -98,9 +115,8 @@ def _build_prompt(categories: List[Dict[str, str]],
     5. Output format specifications
     
     Args:
-        categories: List of category dictionaries containing name, 
-                   description, and naming_pattern
-        variables: List of variable dictionaries containing name and description
+        categories: Categories dict with name as key, value contains description and naming_pattern
+        variables: Variables dict with name as key, description as value
         document_text: The extracted text content from the document
         
     Returns:
@@ -108,20 +124,20 @@ def _build_prompt(categories: List[Dict[str, str]],
     """
     # Build categories section with name, description, and naming pattern
     categories_block = []
-    for cat in categories:
+    for name, details in categories.items():
         categories_block.append(
-            f"# Category: {cat['name']}\n"
-            f"# Description: {cat['description']}\n"
-            f"# Naming Pattern: {cat['naming_pattern']}"
+            f"# Category: {name}\n"
+            f"# Description: {details['description']}\n"
+            f"# Naming Pattern: {details['naming_pattern']}"
         )
     categories_section = "\n---\n".join(categories_block)
 
     # Build variables section - placeholders for use in naming patterns
     variables_block = []
-    for var in variables:
+    for name, description in variables.items():
         variables_block.append(
-            f"# Variable: {var['name']}\n"
-            f"# Description: {var['description']}"
+            f"# Variable: {name}\n"
+            f"# Description: {description}"
         )
     variables_section = "\n---\n".join(variables_block)
 
@@ -147,8 +163,8 @@ def _build_prompt(categories: List[Dict[str, str]],
 
 
 def get_ai_filename_suggestion(document_text: str, 
-                               categories: List[Dict[str, str]], 
-                               variables: List[Dict[str, str]]) -> Tuple[str, str]:
+                               categories: Dict[str, Dict[str, str]], 
+                               variables: Dict[str, str]) -> Tuple[str, str]:
     """
     Send document text to OpenAI API and get categorization and naming suggestions.
     
@@ -160,8 +176,8 @@ def get_ai_filename_suggestion(document_text: str,
     
     Args:
         document_text: Extracted text content from the document
-        categories: User-defined categories with naming patterns
-        variables: User-defined variables for filename construction
+        categories: Categories dict with name as key, value contains description and naming_pattern
+        variables: Variables dict with name as key, description as value
         
     Returns:
         Tuple[str, str]: A tuple of (category_name, suggested_filename)
@@ -197,7 +213,7 @@ def get_ai_filename_suggestion(document_text: str,
         return "General", "unnamed_file"
 
 
-__all__ = ["get_ai_filename_suggestion"] 
+__all__ = ["get_ai_filename_suggestion", "categorize_document", "get_naming_pattern"] 
 
 
 
