@@ -24,7 +24,7 @@ from watchdog.observers import Observer
 
 from config_manager import load_config
 from text_extractor import extract_text_from_pdf, extract_text_from_docx
-from ai_processor import get_ai_filename_suggestion
+from ai_processor import categorize_document, get_naming_pattern, generate_ai_filename
 
 logging.basicConfig(level=logging.INFO, 
                    format="%(asctime)s - %(levelname)s - %(message)s")
@@ -142,32 +142,31 @@ class DocumentHandler(FileSystemEventHandler):
                 else:  # .docx
                     document_text = extract_text_from_docx(filepath)
 
-                # Convert categories and variables to the format expected by AI processor
-                categories_list = [
-                    {
-                        "name": name,
-                        "description": details["description"],
-                        "naming_pattern": details["naming_pattern"]
-                    }
-                    for name, details in self.categories.items()
-                ]
+                # Step 1: Categorize the document using AI
+                categorization_result = categorize_document(document_text, self.categories)
+                category = categorization_result["category"]
                 
-                variables_list = [
-                    {
-                        "name": name,
-                        "description": description
-                    }
-                    for name, description in self.variables.items()
-                ]
-
-                # Get AI-powered categorization and naming suggestion
-                category, suggested_name = get_ai_filename_suggestion(
-                    document_text, 
-                    categories_list,
-                    variables_list)
+                logger.info(f"AI categorization: category='{category}', "
+                           f"confidence={categorization_result['confidence']}%")
+                
+                # Step 2: Get the naming pattern for this category
+                naming_pattern = get_naming_pattern(category, self.categories)
+                if not naming_pattern:
+                    logger.warning(f"No naming pattern found for category '{category}', "
+                                 f"using default")
+                    suggested_name = "unnamed_file"
+                else:
+                    # Step 3: Generate the AI-powered filename using the naming pattern
+                    category_description = self.categories[category]["description"]
+                    suggested_name = generate_ai_filename(
+                        document_text=document_text,
+                        category=category,
+                        category_description=category_description,
+                        naming_pattern=naming_pattern,
+                        variables=self.variables
+                    )
                     
-                logger.info(f"AI suggestion: category='{category}', "
-                           f"name='{suggested_name}'")
+                logger.info(f"AI filename generation: name='{suggested_name}'")
 
                 # Prepare target location for the organized file
                 base_folder = Path(self.watched_folder)
