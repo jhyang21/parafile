@@ -6,17 +6,17 @@ a pre-generated manifest file. It checks that each file was moved to the
 correct category and renamed to the exact expected filename.
 """
 
-import os
-import sys
-import shutil
-import time
 import json
+import os
+import shutil
+import sys
+import time
 from pathlib import Path
 from typing import Dict, List
 
 # Use absolute imports for sibling modules
 from src.config_manager import load_config
-from src.organizer import DocumentHandler, SUPPORTED_EXTENSIONS
+from src.organizer import SUPPORTED_EXTENSIONS, DocumentHandler
 
 
 class TestVerificationError(Exception):

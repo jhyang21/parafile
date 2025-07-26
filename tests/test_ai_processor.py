@@ -5,15 +5,15 @@ These tests focus on the pure logic functions that don't require AI calls,
 and use mocking to test functions that do require AI calls.
 """
 
-import unittest
-from unittest.mock import patch, MagicMock
 import json
+import unittest
+from unittest.mock import MagicMock, patch
 
 from src.ai_processor import (
-    parse_naming_pattern,
-    get_naming_pattern,
     extract_single_variable,
     generate_ai_filename,
+    get_naming_pattern,
+    parse_naming_pattern,
 )
 
 

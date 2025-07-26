@@ -19,8 +19,8 @@ The application supports two main modes:
    automatically organizes them using AI analysis
 """
 
-import sys
 import os
+import sys
 
 # Add src directory to Python path to enable imports from our modules
 # This allows the application to find our custom modules regardless of

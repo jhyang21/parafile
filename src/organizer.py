@@ -18,14 +18,14 @@ import logging
 import shutil
 import time
 from pathlib import Path
-from typing import List, Dict
+from typing import Dict, List
 
-from watchdog.events import FileSystemEventHandler, FileCreatedEvent
+from watchdog.events import FileCreatedEvent, FileSystemEventHandler
 from watchdog.observers import Observer
 
+from ai_processor import categorize_document, generate_ai_filename, get_naming_pattern
 from config_manager import load_config
-from text_extractor import extract_text_from_pdf, extract_text_from_docx
-from ai_processor import categorize_document, get_naming_pattern, generate_ai_filename
+from text_extractor import extract_text_from_docx, extract_text_from_pdf
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"

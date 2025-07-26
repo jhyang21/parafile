@@ -14,20 +14,21 @@ To run this module, execute it directly from the command line:
 `python -m src.test_data_generator`
 """
 
-import os
 import json
+import os
 import shutil
-from pathlib import Path
-from typing import Dict, Any, List
 from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List
 
-from openai import OpenAI
 from dotenv import load_dotenv
 from faker import Faker
+from openai import OpenAI
+
+from src.ai_processor import parse_naming_pattern
 
 # Use absolute import for sibling modules
 from src.config_manager import load_config
-from src.ai_processor import parse_naming_pattern
 
 load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))

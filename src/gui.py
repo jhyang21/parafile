@@ -25,11 +25,10 @@ Key Components:
 import json
 import subprocess
 import sys
-from pathlib import Path
-from typing import Dict, List
-
 import tkinter as tk
+from pathlib import Path
 from tkinter import filedialog, messagebox, simpledialog
+from typing import Dict, List
 
 from config_manager import load_config, save_config_from_parts
 

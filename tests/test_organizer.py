@@ -4,11 +4,11 @@ Unit tests for organizer module.
 These tests verify file organization logic with mocked AI calls.
 """
 
-import unittest
-import tempfile
 import shutil
+import tempfile
+import unittest
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 from src.organizer import DocumentHandler, ensure_category_folder
 
