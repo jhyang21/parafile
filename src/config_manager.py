@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 from typing import Any, Dict
+import copy
 
 
 CONFIG_FILE = Path(__file__).resolve().parent.parent / "config.json"
@@ -32,7 +33,8 @@ def load_config() -> Dict[str, Any]:
     """
     if not CONFIG_FILE.exists():
         save_config(DEFAULT_CONFIG)
-        return DEFAULT_CONFIG.copy()
+        # Return a deep copy so the DEFAULT_CONFIG constant isn't modified
+        return copy.deepcopy(DEFAULT_CONFIG)
 
     try:
         with CONFIG_FILE.open("r", encoding="utf-8") as fp:
@@ -40,13 +42,14 @@ def load_config() -> Dict[str, Any]:
     except (json.JSONDecodeError, OSError):
         # Reset corrupted config file to default
         save_config(DEFAULT_CONFIG)
-        return DEFAULT_CONFIG.copy()
+        return copy.deepcopy(DEFAULT_CONFIG)
 
     # Ensure both categories and variables keys exist
     updated = False
     for key, default_val in DEFAULT_CONFIG.items():
         if key not in data:
-            data[key] = default_val
+            # Use deepcopy to avoid sharing mutable default structures
+            data[key] = copy.deepcopy(default_val)
             updated = True
     
     # Ensure required "General" category exists
