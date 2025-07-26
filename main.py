@@ -27,8 +27,8 @@ import sys
 # the current working directory
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
 
-from organizer import main as organizer_main  # noqa: E402
 from gui import main as gui_main  # noqa: E402
+from organizer import main as organizer_main  # noqa: E402
 
 
 def main():
