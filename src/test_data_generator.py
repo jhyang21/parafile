@@ -13,6 +13,7 @@ file-naming capabilities before deploying to production.
 To run this module, execute it directly from the command line:
 `python -m src.test_data_generator`
 """
+
 import os
 import json
 import shutil
@@ -43,20 +44,22 @@ class TestDataGenerator:
     A config-driven test data generator that creates realistic test values
     based on variable type definitions.
     """
-    
+
     def __init__(self):
         self.fake = Faker()
         # Set seed for reproducible test data
         Faker.seed(42)
-        
-    def generate_value_by_type(self, variable_type: str, variable_name: str = "") -> str:
+
+    def generate_value_by_type(
+        self, variable_type: str, variable_name: str = ""
+    ) -> str:
         """
         Generate a realistic value based on the variable type.
-        
+
         Args:
             variable_type: The type defined in the config
             variable_name: The variable name for additional context
-            
+
         Returns:
             A string value appropriate for the type
         """
@@ -66,76 +69,100 @@ class TestDataGenerator:
             "year": lambda: str(self.fake.year()),
             "month": lambda: f"{self.fake.month():02d}",
             "day": lambda: f"{self.fake.day_of_month():02d}",
-            
-            # Name types  
+            # Name types
             "first_name": lambda: self.fake.first_name(),
             "last_name": lambda: self.fake.last_name(),
             "person_name": lambda: self.fake.name().replace(" ", "_"),
-            
             # Business types
-            "company": lambda: self.fake.company().replace(" ", "").replace(",", "").replace(".", ""),
-            "document_type": lambda: self.fake.random_element(["Report", "Analysis", "Summary", "Proposal", "Invoice"]),
-            "agreement_type": lambda: self.fake.random_element(["NDA", "MSA", "SOW", "Contract", "Agreement"]),
-            
+            "company": lambda: self.fake.company()
+            .replace(" ", "")
+            .replace(",", "")
+            .replace(".", ""),
+            "document_type": lambda: self.fake.random_element(
+                ["Report", "Analysis", "Summary", "Proposal", "Invoice"]
+            ),
+            "agreement_type": lambda: self.fake.random_element(
+                ["NDA", "MSA", "SOW", "Contract", "Agreement"]
+            ),
             # Technical types
             "version": lambda: f"v{self.fake.random_int(1, 5)}.{self.fake.random_int(0, 9)}",
             "period": lambda: f"Q{self.fake.random_int(1, 4)}-{datetime.now().year}",
-            
             # Generic types
             "text": lambda: "_".join(self.fake.words(3)),
             "uuid": lambda: str(self.fake.uuid4())[:8],
         }
-        
+
         generator = type_generators.get(variable_type, type_generators["text"])
         return generator()
 
     def _infer_variable_type(self, variable_name: str) -> str:
         """
         Infer the variable type from the variable name using common patterns.
-        
+
         Args:
             variable_name: The name of the variable to infer the type for
-            
+
         Returns:
             The inferred type string
         """
         variable_name_lower = variable_name.lower()
-        
+
         # Date/time patterns
-        if any(pattern in variable_name_lower for pattern in ['date', 'year', 'month', 'day', 'time']):
-            if 'year' in variable_name_lower:
+        if any(
+            pattern in variable_name_lower
+            for pattern in ["date", "year", "month", "day", "time"]
+        ):
+            if "year" in variable_name_lower:
                 return "year"
-            elif 'month' in variable_name_lower:
+            elif "month" in variable_name_lower:
                 return "month"
-            elif 'day' in variable_name_lower:
+            elif "day" in variable_name_lower:
                 return "day"
             else:
                 return "date"
-        
+
         # Name patterns
-        if any(pattern in variable_name_lower for pattern in ['first_name', 'firstname']):
+        if any(
+            pattern in variable_name_lower for pattern in ["first_name", "firstname"]
+        ):
             return "first_name"
-        elif any(pattern in variable_name_lower for pattern in ['last_name', 'lastname', 'surname']):
+        elif any(
+            pattern in variable_name_lower
+            for pattern in ["last_name", "lastname", "surname"]
+        ):
             return "last_name"
-        elif any(pattern in variable_name_lower for pattern in ['name', 'employee', 'person', 'author']):
+        elif any(
+            pattern in variable_name_lower
+            for pattern in ["name", "employee", "person", "author"]
+        ):
             return "person_name"
-        
-        # Business patterns  
-        if any(pattern in variable_name_lower for pattern in ['company', 'corporation', 'organization', 'org']):
+
+        # Business patterns
+        if any(
+            pattern in variable_name_lower
+            for pattern in ["company", "corporation", "organization", "org"]
+        ):
             return "company"
-        elif any(pattern in variable_name_lower for pattern in ['doc_type', 'document_type', 'type']):
+        elif any(
+            pattern in variable_name_lower
+            for pattern in ["doc_type", "document_type", "type"]
+        ):
             return "document_type"
-        elif any(pattern in variable_name_lower for pattern in ['agreement', 'contract']):
+        elif any(
+            pattern in variable_name_lower for pattern in ["agreement", "contract"]
+        ):
             return "agreement_type"
-        
+
         # Technical patterns
-        elif any(pattern in variable_name_lower for pattern in ['version', 'ver', 'v']):
+        elif any(pattern in variable_name_lower for pattern in ["version", "ver", "v"]):
             return "version"
-        elif any(pattern in variable_name_lower for pattern in ['period', 'quarter', 'q']):
+        elif any(
+            pattern in variable_name_lower for pattern in ["period", "quarter", "q"]
+        ):
             return "period"
-        elif any(pattern in variable_name_lower for pattern in ['uuid', 'id']):
+        elif any(pattern in variable_name_lower for pattern in ["uuid", "id"]):
             return "uuid"
-        
+
         # Default to text
         return "text"
 
@@ -204,13 +231,13 @@ class TestDataGenerator:
                 continue
 
             print(f"Generating test case for category: '{name}'...")
-            
+
             # 1. Generate plausible values for the variables in the naming pattern
             naming_pattern = details["naming_pattern"]
             required_vars = parse_naming_pattern(naming_pattern)
-            
+
             # Skip 'original_name' as it's added by the organizer, not extracted
-            required_vars = [v for v in required_vars if v != 'original_name']
+            required_vars = [v for v in required_vars if v != "original_name"]
 
             generated_values = {}
             for var in required_vars:
@@ -222,9 +249,9 @@ class TestDataGenerator:
             # We handle original_name separately if present
             pattern_values = generated_values.copy()
             source_filename_stem = f"test_doc_{doc_counter:03d}"
-            if 'original_name' in details["naming_pattern"]:
-                pattern_values['original_name'] = source_filename_stem
-            
+            if "original_name" in details["naming_pattern"]:
+                pattern_values["original_name"] = source_filename_stem
+
             expected_filename_stem = naming_pattern.format(**pattern_values)
             # Assuming all test files will be converted to .docx
             expected_filename = f"{expected_filename_stem}.docx"
@@ -243,13 +270,15 @@ class TestDataGenerator:
             print(f"  -> Saved source file: {source_filepath.name}")
 
             # 5. Add this test case to our manifest
-            manifest.append({
-                "source_file_stem": source_filename_stem,
-                "expected_category": name,
-                "expected_filename": expected_filename,
-                "generated_values": generated_values,
-                "naming_pattern": naming_pattern
-            })
+            manifest.append(
+                {
+                    "source_file_stem": source_filename_stem,
+                    "expected_category": name,
+                    "expected_filename": expected_filename,
+                    "generated_values": generated_values,
+                    "naming_pattern": naming_pattern,
+                }
+            )
             doc_counter += 1
 
         # 6. Save the final manifest file
@@ -258,7 +287,9 @@ class TestDataGenerator:
             json.dump(manifest, f, indent=2)
         print(f"\nSaved test manifest to: {manifest_path}")
 
-        print(f"\nTest suite generation complete. Generated {len(manifest)} test cases.")
+        print(
+            f"\nTest suite generation complete. Generated {len(manifest)} test cases."
+        )
 
 
 def generate_test_suite():
@@ -272,4 +303,4 @@ def generate_test_suite():
 if __name__ == "__main__":
     generate_test_suite()
 
-__all__ = ["TestDataGenerator", "generate_test_suite"] 
+__all__ = ["TestDataGenerator", "generate_test_suite"]

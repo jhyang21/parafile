@@ -3,6 +3,7 @@ Unit tests for config_manager module.
 
 These tests verify configuration loading, saving, and transformation logic.
 """
+
 import unittest
 import tempfile
 import json
@@ -14,13 +15,13 @@ from src.config_manager import (
     save_config,
     save_config_from_parts,
     _transform_config,
-    DEFAULT_CONFIG
+    DEFAULT_CONFIG,
 )
 
 
 class TestConfigManager(unittest.TestCase):
     """Test the config_manager functions."""
-    
+
     def setUp(self):
         """Set up test fixtures."""
         self.test_config = {
@@ -30,144 +31,135 @@ class TestConfigManager(unittest.TestCase):
                 {
                     "name": "Reports",
                     "description": "Financial reports",
-                    "naming_pattern": "{date}_{type}_report.pdf"
+                    "naming_pattern": "{date}_{type}_report.pdf",
                 },
                 {
                     "name": "Invoices",
                     "description": "Customer invoices",
-                    "naming_pattern": "{company}_{invoice_id}.pdf"
-                }
+                    "naming_pattern": "{company}_{invoice_id}.pdf",
+                },
             ],
             "variables": [
-                {
-                    "name": "date",
-                    "description": "Document date"
-                },
-                {
-                    "name": "company",
-                    "description": "Company name"
-                },
-                {
-                    "name": "type",
-                    "description": "Document type"
-                },
-                {
-                    "name": "invoice_id",
-                    "description": "Invoice identifier"
-                }
-            ]
+                {"name": "date", "description": "Document date"},
+                {"name": "company", "description": "Company name"},
+                {"name": "type", "description": "Document type"},
+                {"name": "invoice_id", "description": "Invoice identifier"},
+            ],
         }
 
     def test_transform_config(self):
         """Test the _transform_config function."""
-        watched_folder, enable_org, categories, variables = _transform_config(self.test_config)
-        
+        watched_folder, enable_org, categories, variables = _transform_config(
+            self.test_config
+        )
+
         # Test returned values
         self.assertEqual(watched_folder, "/test/folder")
         self.assertTrue(enable_org)
-        
+
         # Test categories transformation
         expected_categories = {
             "Reports": {
                 "description": "Financial reports",
-                "naming_pattern": "{date}_{type}_report.pdf"
+                "naming_pattern": "{date}_{type}_report.pdf",
             },
             "Invoices": {
                 "description": "Customer invoices",
-                "naming_pattern": "{company}_{invoice_id}.pdf"
-            }
+                "naming_pattern": "{company}_{invoice_id}.pdf",
+            },
         }
         self.assertEqual(categories, expected_categories)
-        
+
         # Test variables transformation
         expected_variables = {
             "date": "Document date",
-            "company": "Company name", 
+            "company": "Company name",
             "type": "Document type",
-            "invoice_id": "Invoice identifier"
+            "invoice_id": "Invoice identifier",
         }
         self.assertEqual(variables, expected_variables)
 
     def test_transform_config_with_defaults(self):
         """Test _transform_config with missing fields."""
         minimal_config = {}
-        watched_folder, enable_org, categories, variables = _transform_config(minimal_config)
-        
+        watched_folder, enable_org, categories, variables = _transform_config(
+            minimal_config
+        )
+
         self.assertEqual(watched_folder, "SELECT FOLDER")
         self.assertTrue(enable_org)
         self.assertEqual(categories, {})
         self.assertEqual(variables, {})
 
-    @patch('src.config_manager.CONFIG_FILE')
+    @patch("src.config_manager.CONFIG_FILE")
     def test_save_config(self, mock_config_file):
         """Test the save_config function."""
         # Create a temporary file
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json') as temp_file:
+        with tempfile.NamedTemporaryFile(
+            mode="w", delete=False, suffix=".json"
+        ) as temp_file:
             temp_path = Path(temp_file.name)
-        
+
         mock_config_file.__str__ = lambda: str(temp_path)
         mock_config_file.open = temp_path.open
-        
+
         try:
             # Save the config
             save_config(self.test_config)
-            
+
             # Verify it was saved correctly
-            with temp_path.open('r', encoding='utf-8') as f:
+            with temp_path.open("r", encoding="utf-8") as f:
                 saved_config = json.load(f)
-            
+
             self.assertEqual(saved_config, self.test_config)
-            
+
         finally:
             # Clean up
             temp_path.unlink()
 
-    @patch('src.config_manager.CONFIG_FILE')
+    @patch("src.config_manager.CONFIG_FILE")
     def test_save_config_from_parts(self, mock_config_file):
         """Test the save_config_from_parts function."""
         # Create a temporary file
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json') as temp_file:
+        with tempfile.NamedTemporaryFile(
+            mode="w", delete=False, suffix=".json"
+        ) as temp_file:
             temp_path = Path(temp_file.name)
-        
+
         mock_config_file.__str__ = lambda: str(temp_path)
         mock_config_file.open = temp_path.open
-        
+
         try:
             # Prepare test data without types
             categories = {
                 "Reports": {
                     "description": "Financial reports",
-                    "naming_pattern": "{date}_report.pdf"
+                    "naming_pattern": "{date}_report.pdf",
                 }
             }
             variables = {"date": "Document date"}
-            
+
             # Save from parts
             save_config_from_parts(
                 watched_folder="/test/folder",
                 enable_organization=True,
                 categories=categories,
-                variables=variables
+                variables=variables,
             )
-            
+
             # Verify it was saved correctly
-            with temp_path.open('r', encoding='utf-8') as f:
+            with temp_path.open("r", encoding="utf-8") as f:
                 saved_config = json.load(f)
-            
+
             # Should not include type field when not provided
-            expected_variables = [
-                {
-                    "name": "date",
-                    "description": "Document date"
-                }
-            ]
-            
+            expected_variables = [{"name": "date", "description": "Document date"}]
+
             self.assertEqual(saved_config["variables"], expected_variables)
-            
+
         finally:
             # Clean up
             temp_path.unlink()
 
 
-if __name__ == '__main__':
-    unittest.main() 
+if __name__ == "__main__":
+    unittest.main()
