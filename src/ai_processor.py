@@ -91,8 +91,8 @@ def categorize_document(
                         "category": {"type": "string"},
                     },
                     "required": ["reasoning", "confidence", "category"],
-                    "additionalProperties": False
-                }
+                    "additionalProperties": False,
+                },
             },
         },
         max_tokens=256,
@@ -213,8 +213,8 @@ def extract_single_variable(
             "type": "object",
             "properties": {variable_name: {"type": "string"}},
             "required": [variable_name],
-            "additionalProperties": False
-        }
+            "additionalProperties": False,
+        },
     }
 
     try:
