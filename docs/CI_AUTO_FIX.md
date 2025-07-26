@@ -10,16 +10,16 @@ Our CI/CD pipeline now automatically fixes common code formatting and style issu
 
 When you push code or create a pull request, the pipeline will:
 
-1. **🔧 Auto-Fix Phase**:
+1. **Auto-Fix Phase**:
    - Run `black` to format code according to PEP 8
    - Run `isort` to organize import statements
    - Run `autopep8` to fix common flake8 style issues
 
-2. **💾 Auto-Commit Phase**:
-   - If any changes were made, commit them with message: `🤖 Auto-fix: Apply black, isort, and autopep8 formatting`
+2. **Auto-Commit Phase**:
+   - If any changes were made, commit them with message: `Auto-fix: Apply black, isort, and autopep8 formatting`
    - Push changes back to the same branch (for direct pushes) or PR branch (for pull requests)
 
-3. **✅ Verification Phase**:
+3. **Verification Phase**:
    - Re-run all linting tools to verify everything is properly formatted
    - Run `mypy` for type checking (manual fixes required if issues found)
 
@@ -29,10 +29,10 @@ For other Python versions, the pipeline runs in check-only mode to ensure compat
 
 ## What Gets Auto-Fixed
 
-- ✅ **Black**: Code formatting (line length, quotes, spacing, etc.)
-- ✅ **isort**: Import statement organization and sorting
-- ✅ **autopep8**: Common PEP 8 style violations that flake8 detects
-- ❌ **mypy**: Type errors require manual intervention
+- **Black**: Code formatting (line length, quotes, spacing, etc.)
+- **isort**: Import statement organization and sorting
+- **autopep8**: Common PEP 8 style violations that flake8 detects
+- **mypy**: Type errors require manual intervention (NOT auto-fixed)
 
 ## Benefits
 

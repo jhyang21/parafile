@@ -2,7 +2,7 @@ name: Continuous Integration
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, develop, v0.0.2]
   pull_request:
     branches: [main, develop]
   workflow_dispatch:
@@ -299,14 +299,14 @@ jobs:
           echo "Security Scan: ${{ needs.security-scan.result }}"
 
           if [[ "${{ needs.lint.result }}" == "failure" || "${{ needs.lint-check.result }}" == "failure" || "${{ needs.unit-tests.result }}" == "failure" ]]; then
-            echo "❌ Critical jobs failed"
+            echo "[FAIL] Critical jobs failed"
             exit 1
           elif [[ "${{ needs.integration-tests.result }}" == "failure" ]]; then
-            echo "⚠️  Integration tests failed - check AI API connectivity"
+            echo "[WARN] Integration tests failed - check AI API connectivity"
             exit 1
           else
-            echo "✅ All critical jobs passed"
+            echo "[PASS] All critical jobs passed"
             if [[ "${{ needs.security-scan.result }}" == "failure" ]]; then
-              echo "⚠️  Security scan found issues - review artifacts"
+              echo "[WARN] Security scan found issues - review artifacts"
             fi
           fi
