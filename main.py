@@ -9,7 +9,7 @@ or the file monitoring system.
 
 Usage:
     python main.py          # Launch GUI (default)
-    python main.py gui      # Launch GUI explicitly  
+    python main.py gui      # Launch GUI explicitly
     python main.py monitor  # Start verbose file monitoring
 
 The application supports two main modes:
@@ -25,7 +25,7 @@ import os
 # Add src directory to Python path to enable imports from our modules
 # This allows the application to find our custom modules regardless of
 # the current working directory
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
 
 from gui import main as gui_main
 from organizer import main as organizer_main
@@ -34,7 +34,7 @@ from organizer import main as organizer_main
 def main():
     """
     Main entry point for the application.
-    
+
     Parses command-line arguments and launches the appropriate module:
     - No arguments or 'gui': Launch the configuration GUI
     - 'monitor': Start the file monitoring service
@@ -46,10 +46,10 @@ def main():
     elif len(sys.argv) > 1:
         # Parse the first command-line argument
         command = sys.argv[1].lower()
-        
-        if command == 'gui':
+
+        if command == "gui":
             gui_main()
-        elif command == 'monitor':
+        elif command == "monitor":
             organizer_main()
         else:
             # Invalid command provided
@@ -66,5 +66,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
-    
+    main()
