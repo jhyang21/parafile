@@ -36,7 +36,7 @@ jobs:
           python-version: "3.11"
           cache: 'pip'
 
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         with:
           path: ~/.cache/pip
           key: ${{ needs.setup.outputs.cache-key }}
@@ -129,7 +129,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
 
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         with:
           path: ~/.cache/pip
           key: ${{ needs.setup.outputs.cache-key }}
@@ -157,22 +157,22 @@ jobs:
     runs-on: ubuntu-latest
     needs: [lint]
     if: always() && (needs.lint.result == 'success')
-    strategy:
-      matrix:
-        python-version: ["3.9", "3.10", "3.11"]
+            strategy:
+          matrix:
+            python-version: ["3.9", "3.10", "3.11"]
 
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-          cache: 'pip'
+        steps:
+          - uses: actions/checkout@v4
+          - uses: actions/setup-python@v4
+            with:
+              python-version: ${{ matrix.python-version }}
+              cache: 'pip'
 
-      - uses: actions/cache@v3
-        with:
-          path: ~/.cache/pip
-          key: ${{ needs.setup.outputs.cache-key }}
-          restore-keys: ${{ runner.os }}-pip-
+          - uses: actions/cache@v4
+            with:
+              path: ~/.cache/pip
+              key: ${{ needs.setup.outputs.cache-key }}
+              restore-keys: ${{ runner.os }}-pip-
 
       - name: Install dependencies
         run: |
@@ -188,7 +188,7 @@ jobs:
         run: pytest --cov --cov-report=xml --cov-report=term
         if: matrix.python-version == '3.11'  # Only generate coverage on latest version
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: matrix.python-version == '3.11'
         with:
           name: coverage-report
@@ -200,18 +200,18 @@ jobs:
     needs: [lint, unit-tests]
     if: always() && (needs.lint.result == 'success' && needs.unit-tests.result == 'success')
 
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
-        with:
-          python-version: "3.11"  # Use latest stable for integration tests
-          cache: 'pip'
+            steps:
+          - uses: actions/checkout@v4
+          - uses: actions/setup-python@v4
+            with:
+              python-version: "3.11"  # Use latest stable for integration tests
+              cache: 'pip'
 
-      - uses: actions/cache@v3
-        with:
-          path: ~/.cache/pip
-          key: ${{ needs.setup.outputs.cache-key }}
-          restore-keys: ${{ runner.os }}-pip-
+          - uses: actions/cache@v4
+            with:
+              path: ~/.cache/pip
+              key: ${{ needs.setup.outputs.cache-key }}
+              restore-keys: ${{ runner.os }}-pip-
 
       - name: Install dependencies
         run: |
@@ -241,13 +241,13 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           PYTHONPATH: .
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: test-documents-${{ github.run_number }}
           path: test_documents/
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: verification-logs-${{ github.run_number }}
@@ -278,7 +278,7 @@ jobs:
         run: bandit -r src/ -f json -o bandit-report.json
         continue-on-error: true  # Don't fail build on bandit issues initially
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: security-reports
