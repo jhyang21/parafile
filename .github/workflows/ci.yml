@@ -24,6 +24,7 @@ jobs:
   lint:
     name: Code Quality & Linting with Auto-fix
     runs-on: ubuntu-latest
+    needs: [setup]
 
     steps:
       - uses: actions/checkout@v4
@@ -117,6 +118,7 @@ jobs:
   lint-check:
     name: Code Quality Check (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
+    needs: [setup]
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
     strategy:
       matrix:
@@ -155,7 +157,7 @@ jobs:
   unit-tests:
     name: Unit Tests
     runs-on: ubuntu-latest
-    needs: [lint]
+    needs: [setup, lint]
     if: always() && (needs.lint.result == 'success')
     strategy:
       matrix:
@@ -197,7 +199,7 @@ jobs:
   integration-tests:
     name: Integration Tests
     runs-on: ubuntu-latest
-    needs: [lint, unit-tests]
+    needs: [setup, lint, unit-tests]
     if: always() && (needs.lint.result == 'success' && needs.unit-tests.result == 'success')
 
     steps:
