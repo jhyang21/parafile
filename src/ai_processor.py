@@ -205,6 +205,59 @@ def extract_single_variable(document_text: str, variable_name: str, variables: D
         return f"<{variable_name.upper()}>"
 
 
+def generate_ai_filename(document_text: str, category: str, category_description: str, 
+                        naming_pattern: str, variables: Dict[str, str]) -> str:
+    """
+    Generate the final AI-powered document filename using structured variable extraction.
+    
+    This function orchestrates the complete filename assembly process by:
+    1. Parsing the naming pattern to identify required variables
+    2. Extracting each variable's value from the document text one by one
+    3. Substituting all extracted values into the naming pattern
+    4. Returning the final reconstructed filename
+    
+    Args:
+        document_text: The text content of the document to analyze.
+        category: The document category name for context.
+        category_description: Description of what this category represents.
+        naming_pattern: The naming pattern with variable placeholders (e.g., "{date}_{company}_{type}.pdf").
+        variables: A dictionary where keys are variable names and values are their descriptions.
+        
+    Returns:
+        str: The final assembled filename with all placeholders replaced.
+             Returns the original naming pattern with placeholder values on failure.
+    """
+    try:
+        # Step 1: Parse the naming pattern to find all required variables
+        required_variables = parse_naming_pattern(naming_pattern)
+        
+        # Step 2: Extract each variable's value from the document text
+        extracted_values = {}
+        for var_name in required_variables:
+            extracted_value = extract_single_variable(
+                document_text=document_text,
+                variable_name=var_name,
+                variables=variables,
+                category=category,
+                category_description=category_description,
+                naming_pattern=naming_pattern
+            )
+            extracted_values[var_name] = extracted_value
+        
+        # Step 3: Replace all placeholders in the naming pattern with extracted values
+        assembled_filename = naming_pattern.format(**extracted_values)
+        
+        return assembled_filename
+        
+    except Exception:
+        # Fallback: return pattern with placeholder values if anything fails
+        required_variables = parse_naming_pattern(naming_pattern)
+        fallback_values = {var: f"<{var.upper()}>" for var in required_variables}
+        try:
+            return naming_pattern.format(**fallback_values)
+        except Exception:
+            return "unnamed_file"
+
 def _build_prompt(categories: Dict[str, Dict[str, str]], 
                   variables: Dict[str, str], 
                   document_text: str) -> str:
