@@ -1,7 +1,21 @@
-watchdog==6.0.0
-openai==1.95.0
-python-docx==1.2.0
 PyPDF2==3.0.1
-python-dotenv==1.1.1
-pyinstaller==6.14.2
-PyCryptodome==3.23.0
+python-docx==0.8.11
+watchdog==4.0.1
+python-dotenv==1.0.1
+openai==1.35.13
+Faker==26.0.0
+
+# Testing dependencies
+pytest==7.4.3
+pytest-cov==4.1.0
+coverage==7.3.2
+
+# Development dependencies  
+black==23.12.1
+flake8==6.1.0
+isort==5.13.2
+mypy==1.8.0
+
+# Security scanning
+safety==2.3.5
+bandit==1.7.5

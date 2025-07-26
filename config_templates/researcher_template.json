@@ -11,31 +11,38 @@
   "variables": [
     {
         "name": "first_author_first_name",
-        "description": "The first name of the first author of the paper."
+        "description": "The first name of the first author of the paper.",
+        "type": "first_name"
     },
     {
       "name": "first_author_last_name",
-      "description": "The last name of the first author of the paper."
+      "description": "The last name of the first author of the paper.",
+      "type": "last_name"
     },
     {
       "name": "short_title",
-      "description": "A few keywords from the paper's title to keep it short."
+      "description": "A few keywords from the paper's title to keep it short.",
+      "type": "text"
     },
     {
         "name": "long_title",
-        "description": "The full title of the paper."
+        "description": "The full title of the paper.",
+        "type": "text"
     },
     {
         "name": "YYYY",
-        "description": "The year of publication of the paper."
+        "description": "The year of publication of the paper.",
+        "type": "year"
     },
     {
         "name": "MM",
-        "description": "The month of publication of the paper."
+        "description": "The month of publication of the paper.",
+        "type": "month"
     },
     {
         "name": "DD",
-        "description": "The day of publication of the paper."
+        "description": "The day of publication of the paper.",
+        "type": "day"
     }
   ]
 } 

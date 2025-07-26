@@ -61,7 +61,7 @@ class DocumentHandler(FileSystemEventHandler):
     common file access issues like temporary locks or permission problems.
     """
 
-    def __init__(self, watched_folder: str, enable_organization: bool, categories: Dict[str, Dict[str, str]], variables: Dict[str, str]):
+    def __init__(self, watched_folder: str, enable_organization: bool, categories: Dict[str, Dict[str, str]], variables: Dict[str, str], variable_types: Dict[str, str] = None):
         """
         Initialize the document handler with configuration.
         
@@ -70,12 +70,14 @@ class DocumentHandler(FileSystemEventHandler):
             enable_organization: Whether to organize files into category folders
             categories: Categories dict with name as key
             variables: Variables dict with name as key
+            variable_types: Variable types dict with name as key (optional for backward compatibility)
         """
         super().__init__()
         self.watched_folder = watched_folder
         self.enable_organization = enable_organization
         self.categories = categories
         self.variables = variables
+        self.variable_types = variable_types or {}
 
     def on_created(self, event: FileCreatedEvent):
         """
@@ -220,7 +222,7 @@ class DocumentHandler(FileSystemEventHandler):
                 break
 
 
-def start_observer(watched_folder: str = None, enable_organization: bool = None, categories: Dict[str, Dict[str, str]] = None, variables: Dict[str, str] = None):
+def start_observer(watched_folder: str = None, enable_organization: bool = None, categories: Dict[str, Dict[str, str]] = None, variables: Dict[str, str] = None, variable_types: Dict[str, str] = None):
     """
     Start the file system observer for monitoring the configured folder.
     
@@ -233,6 +235,7 @@ def start_observer(watched_folder: str = None, enable_organization: bool = None,
         enable_organization: Whether to organize files into category folders (optional, loads from config if None)
         categories: Categories dict with name as key (optional, loads from config if None)
         variables: Variables dict with name as key (optional, loads from config if None)
+        variable_types: Variable types dict with name as key (optional, loads from config if None)
         
     Returns:
         Observer: The started watchdog observer instance
@@ -242,7 +245,7 @@ def start_observer(watched_folder: str = None, enable_organization: bool = None,
     """
     # Load configuration if not provided
     if watched_folder is None or enable_organization is None or categories is None or variables is None:
-        watched_folder, enable_organization, categories, variables = load_config()
+        watched_folder, enable_organization, categories, variables, variable_types = load_config()
     
     if not watched_folder or watched_folder == "SELECT FOLDER":
         raise ValueError("No watched folder configured. Please set up configuration first.")
@@ -254,7 +257,7 @@ def start_observer(watched_folder: str = None, enable_organization: bool = None,
         logger.info(f"Created watched folder: {folder_path}")
 
     # Set up and start the file system observer
-    event_handler = DocumentHandler(watched_folder, enable_organization, categories, variables)
+    event_handler = DocumentHandler(watched_folder, enable_organization, categories, variables, variable_types)
     observer = Observer()
     observer.schedule(event_handler, str(folder_path), recursive=False)
     observer.start()
@@ -275,10 +278,10 @@ def main():
     """
     try:
         # Load configuration
-        watched_folder, enable_organization, categories, variables = load_config()
+        watched_folder, enable_organization, categories, variables, variable_types = load_config()
         
         # Start the monitoring service
-        observer = start_observer(watched_folder, enable_organization, categories, variables)
+        observer = start_observer(watched_folder, enable_organization, categories, variables, variable_types)
         
         # Keep the process running
         while True:

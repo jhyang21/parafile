@@ -43,7 +43,7 @@ DEFAULT_CONFIG = {
 }
 
 
-def load_config() -> Tuple[str, bool, Dict[str, Dict[str, str]], Dict[str, str]]:
+def load_config() -> Tuple[str, bool, Dict[str, Dict[str, str]], Dict[str, str], Dict[str, str]]:
     """
     Load configuration from the JSON file with validation and auto-repair.
 
@@ -60,6 +60,7 @@ def load_config() -> Tuple[str, bool, Dict[str, Dict[str, str]], Dict[str, str]]
         - categories (Dict[str, Dict[str, str]]): Categories with name as key, 
           value contains description and naming_pattern
         - variables (Dict[str, str]): Variables with name as key, description as value
+        - variable_types (Dict[str, str]): Variables with name as key, type as value
         
     Note:
         This function never raises exceptions. It will always return valid
@@ -117,7 +118,7 @@ def load_config() -> Tuple[str, bool, Dict[str, Dict[str, str]], Dict[str, str]]
     return _transform_config(data)
 
 
-def _transform_config(data: Dict[str, Any]) -> Tuple[str, bool, Dict[str, Dict[str, str]], Dict[str, str]]:
+def _transform_config(data: Dict[str, Any]) -> Tuple[str, bool, Dict[str, Dict[str, str]], Dict[str, str], Dict[str, str]]:
     """
     Transform the raw configuration data into the desired return format.
     
@@ -125,7 +126,7 @@ def _transform_config(data: Dict[str, Any]) -> Tuple[str, bool, Dict[str, Dict[s
         data: Raw configuration dictionary from JSON
         
     Returns:
-        Tuple of (watched_folder, enable_organization, categories_dict, variables_dict)
+        Tuple of (watched_folder, enable_organization, categories_dict, variables_dict, variable_types_dict)
     """
     watched_folder = data.get("watched_folder", "SELECT FOLDER")
     enable_organization = data.get("enable_organization", True)
@@ -140,10 +141,13 @@ def _transform_config(data: Dict[str, Any]) -> Tuple[str, bool, Dict[str, Dict[s
     
     # Transform variables list into dict with name as key
     variables = {}
+    variable_types = {}
     for var in data.get("variables", []):
         variables[var["name"]] = var["description"]
+        # Handle both old configs without 'type' and new ones with 'type'
+        variable_types[var["name"]] = var.get("type", "text")
     
-    return watched_folder, enable_organization, categories, variables
+    return watched_folder, enable_organization, categories, variables, variable_types
 
 
 def save_config(config: Dict[str, Any]) -> None:
@@ -167,15 +171,17 @@ def save_config(config: Dict[str, Any]) -> None:
 def save_config_from_parts(watched_folder: str, 
                           enable_organization: bool,
                           categories: Dict[str, Dict[str, str]], 
-                          variables: Dict[str, str]) -> None:
+                          variables: Dict[str, str],
+                          variable_types: Dict[str, str] = None) -> None:
     """
-    Save configuration from the 3-part format back to JSON file.
+    Save configuration from the parts format back to JSON file.
     
     Args:
         watched_folder: Path to the monitored folder
         enable_organization: Whether to organize files into category folders
         categories: Categories dict with name as key
         variables: Variables dict with name as key
+        variable_types: Variable types dict with name as key (optional for backward compatibility)
     """
     # Convert back to the original format
     config = {
@@ -189,14 +195,18 @@ def save_config_from_parts(watched_folder: str,
             }
             for name, details in categories.items()
         ],
-        "variables": [
-            {
-                "name": name,
-                "description": description
-            }
-            for name, description in variables.items()
-        ]
+        "variables": []
     }
+    
+    # Build variables list with optional type information
+    for name, description in variables.items():
+        var_entry = {
+            "name": name,
+            "description": description
+        }
+        if variable_types and name in variable_types:
+            var_entry["type"] = variable_types[name]
+        config["variables"].append(var_entry)
     
     save_config(config)
 
