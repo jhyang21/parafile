@@ -68,7 +68,7 @@ class ConfigGUI(tk.Tk):
         self.geometry("600x600")
 
         # Load configuration as separate objects
-        self.watched_folder, self.categories, self.variables = load_config()
+        self.watched_folder, self.enable_organization, self.categories, self.variables = load_config()
         self.monitor_process: subprocess.Popen | None = None
         self.current_view = None
 
@@ -118,6 +118,25 @@ class ConfigGUI(tk.Tk):
         # Browse button for folder selection dialog
         tk.Button(folder_frame, text="Browse", 
                  command=self.browse_folder).pack(side=tk.LEFT)
+
+        # === ORGANIZATION TOGGLE SECTION ===
+        # Frame for organization settings
+        org_frame = tk.Frame(self.list_view_frame)
+        org_frame.pack(fill=tk.X, pady=10, padx=10)
+        
+        # Organization toggle checkbox
+        self.org_var = tk.BooleanVar(value=self.enable_organization)
+        self.org_checkbox = tk.Checkbutton(org_frame, 
+                                          text="Organize files into category folders", 
+                                          variable=self.org_var,
+                                          command=self.on_organization_toggle)
+        self.org_checkbox.pack(side=tk.LEFT)
+        
+        # Help text for the organization feature
+        help_label = tk.Label(org_frame, 
+                             text="(When disabled, files are only renamed, not moved to subfolders)",
+                             fg="gray", font=("Arial", 8))
+        help_label.pack(side=tk.LEFT, padx=10)
 
         # === MONITORING CONTROL SECTION ===
         # Frame for monitoring status and controls
@@ -336,9 +355,24 @@ class ConfigGUI(tk.Tk):
         if folder_selected:
             self.folder_var.set(folder_selected)
             self.watched_folder = self.folder_var.get().strip()
-            save_config_from_parts(self.watched_folder, self.categories, self.variables)
+            save_config_from_parts(self.watched_folder, self.enable_organization, self.categories, self.variables)
             messagebox.showinfo("Config Saved", 
                                "Watched folder saved successfully.")
+    
+    def on_organization_toggle(self):
+        """
+        Handle changes to the organization toggle checkbox.
+        
+        This method updates the enable_organization setting and saves
+        the configuration when the user toggles the organization feature.
+        It provides immediate feedback about the setting change.
+        """
+        self.enable_organization = self.org_var.get()
+        save_config_from_parts(self.watched_folder, self.enable_organization, self.categories, self.variables)
+        
+        status = "enabled" if self.enable_organization else "disabled (rename only)"
+        messagebox.showinfo("Organization Setting Updated", 
+                           f"File organization is now {status}.")
     
     def prompt_folder_selection(self):
         """
@@ -440,7 +474,7 @@ class ConfigGUI(tk.Tk):
         # Remove the category and update the display
         del self.categories[current_name]
         self.refresh_categories()
-        save_config_from_parts(self.watched_folder, self.categories, self.variables)
+        save_config_from_parts(self.watched_folder, self.enable_organization, self.categories, self.variables)
 
     def show_category_form(self, cat: Dict[str, str] | None = None, 
                           index: int | None = None):
@@ -658,7 +692,7 @@ class ConfigGUI(tk.Tk):
                 }
             
             # Save configuration and update display
-            save_config_from_parts(self.watched_folder, self.categories, self.variables)
+            save_config_from_parts(self.watched_folder, self.enable_organization, self.categories, self.variables)
             self.refresh_categories()
             self.show_list_view()
 
@@ -741,7 +775,7 @@ class ConfigGUI(tk.Tk):
         # Remove the variable and update the display
         del self.variables[current_name]
         self.refresh_variables()
-        save_config_from_parts(self.watched_folder, self.categories, self.variables)
+        save_config_from_parts(self.watched_folder, self.enable_organization, self.categories, self.variables)
 
     def show_variable_form(self, var: Dict[str, str] | None = None, 
                           index: int | None = None):
@@ -819,7 +853,7 @@ class ConfigGUI(tk.Tk):
                 self.variables[vals["name"]] = vals["description"]
 
             # Save configuration and update display
-            save_config_from_parts(self.watched_folder, self.categories, self.variables)
+            save_config_from_parts(self.watched_folder, self.enable_organization, self.categories, self.variables)
             self.refresh_variables()
             self.show_list_view()
         

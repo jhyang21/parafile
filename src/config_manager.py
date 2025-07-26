@@ -26,6 +26,7 @@ CONFIG_FILE = Path(__file__).resolve().parent.parent / "config.json"
 # or when repairing corrupted/incomplete configurations
 DEFAULT_CONFIG = {
     "watched_folder": "SELECT FOLDER",
+    "enable_organization": True,
     "categories": [
         {
             "name": "General",
@@ -42,7 +43,7 @@ DEFAULT_CONFIG = {
 }
 
 
-def load_config() -> Tuple[str, Dict[str, Dict[str, str]], Dict[str, str]]:
+def load_config() -> Tuple[str, bool, Dict[str, Dict[str, str]], Dict[str, str]]:
     """
     Load configuration from the JSON file with validation and auto-repair.
 
@@ -55,6 +56,7 @@ def load_config() -> Tuple[str, Dict[str, Dict[str, str]], Dict[str, str]]:
     Returns:
         Tuple containing:
         - watched_folder_location (str): Path to the monitored folder
+        - enable_organization (bool): Whether to organize files into category folders
         - categories (Dict[str, Dict[str, str]]): Categories with name as key, 
           value contains description and naming_pattern
         - variables (Dict[str, str]): Variables with name as key, description as value
@@ -115,7 +117,7 @@ def load_config() -> Tuple[str, Dict[str, Dict[str, str]], Dict[str, str]]:
     return _transform_config(data)
 
 
-def _transform_config(data: Dict[str, Any]) -> Tuple[str, Dict[str, Dict[str, str]], Dict[str, str]]:
+def _transform_config(data: Dict[str, Any]) -> Tuple[str, bool, Dict[str, Dict[str, str]], Dict[str, str]]:
     """
     Transform the raw configuration data into the desired return format.
     
@@ -123,9 +125,10 @@ def _transform_config(data: Dict[str, Any]) -> Tuple[str, Dict[str, Dict[str, st
         data: Raw configuration dictionary from JSON
         
     Returns:
-        Tuple of (watched_folder, categories_dict, variables_dict)
+        Tuple of (watched_folder, enable_organization, categories_dict, variables_dict)
     """
     watched_folder = data.get("watched_folder", "SELECT FOLDER")
+    enable_organization = data.get("enable_organization", True)
     
     # Transform categories list into dict with name as key
     categories = {}
@@ -140,7 +143,7 @@ def _transform_config(data: Dict[str, Any]) -> Tuple[str, Dict[str, Dict[str, st
     for var in data.get("variables", []):
         variables[var["name"]] = var["description"]
     
-    return watched_folder, categories, variables
+    return watched_folder, enable_organization, categories, variables
 
 
 def save_config(config: Dict[str, Any]) -> None:
@@ -162,6 +165,7 @@ def save_config(config: Dict[str, Any]) -> None:
 
 
 def save_config_from_parts(watched_folder: str, 
+                          enable_organization: bool,
                           categories: Dict[str, Dict[str, str]], 
                           variables: Dict[str, str]) -> None:
     """
@@ -169,12 +173,14 @@ def save_config_from_parts(watched_folder: str,
     
     Args:
         watched_folder: Path to the monitored folder
+        enable_organization: Whether to organize files into category folders
         categories: Categories dict with name as key
         variables: Variables dict with name as key
     """
     # Convert back to the original format
     config = {
         "watched_folder": watched_folder,
+        "enable_organization": enable_organization,
         "categories": [
             {
                 "name": name,

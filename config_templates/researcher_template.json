@@ -1,5 +1,6 @@
 {
   "watched_folder": "SELECT FOLDER",
+  "enable_organization": true,
   "categories": [
     {
       "name": "Research Papers",

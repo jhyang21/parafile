@@ -61,17 +61,19 @@ class DocumentHandler(FileSystemEventHandler):
     common file access issues like temporary locks or permission problems.
     """
 
-    def __init__(self, watched_folder: str, categories: Dict[str, Dict[str, str]], variables: Dict[str, str]):
+    def __init__(self, watched_folder: str, enable_organization: bool, categories: Dict[str, Dict[str, str]], variables: Dict[str, str]):
         """
         Initialize the document handler with configuration.
         
         Args:
             watched_folder: Path to the monitored folder
+            enable_organization: Whether to organize files into category folders
             categories: Categories dict with name as key
             variables: Variables dict with name as key
         """
         super().__init__()
         self.watched_folder = watched_folder
+        self.enable_organization = enable_organization
         self.categories = categories
         self.variables = variables
 
@@ -170,16 +172,25 @@ class DocumentHandler(FileSystemEventHandler):
 
                 # Prepare target location for the organized file
                 base_folder = Path(self.watched_folder)
-                category_folder = ensure_category_folder(base_folder, category)
+                
+                # Determine destination folder based on organization setting
+                if self.enable_organization:
+                    # Organize into category-specific subfolder
+                    destination_folder = ensure_category_folder(base_folder, category)
+                    logger.info(f"Organization enabled: placing in '{category}' folder")
+                else:
+                    # Keep in the watched folder, just rename
+                    destination_folder = base_folder
+                    logger.info("Organization disabled: keeping in watched folder")
 
                 # Construct new filename, preserving original extension
                 suggested_filename = f"{suggested_name}{filepath.suffix.lower()}"
-                dest_path = category_folder / suggested_filename
+                dest_path = destination_folder / suggested_filename
 
                 # Handle naming conflicts by appending sequential numbers
                 counter = 1
                 while dest_path.exists():
-                    dest_path = category_folder / (
+                    dest_path = destination_folder / (
                         f"{suggested_name}_{counter}{filepath.suffix.lower()}")
                     counter += 1
 
@@ -209,7 +220,7 @@ class DocumentHandler(FileSystemEventHandler):
                 break
 
 
-def start_observer(watched_folder: str = None, categories: Dict[str, Dict[str, str]] = None, variables: Dict[str, str] = None):
+def start_observer(watched_folder: str = None, enable_organization: bool = None, categories: Dict[str, Dict[str, str]] = None, variables: Dict[str, str] = None):
     """
     Start the file system observer for monitoring the configured folder.
     
@@ -219,6 +230,7 @@ def start_observer(watched_folder: str = None, categories: Dict[str, Dict[str, s
     
     Args:
         watched_folder: Path to the monitored folder (optional, loads from config if None)
+        enable_organization: Whether to organize files into category folders (optional, loads from config if None)
         categories: Categories dict with name as key (optional, loads from config if None)
         variables: Variables dict with name as key (optional, loads from config if None)
         
@@ -229,8 +241,8 @@ def start_observer(watched_folder: str = None, categories: Dict[str, Dict[str, s
         ValueError: If watched_folder is not configured or doesn't exist
     """
     # Load configuration if not provided
-    if watched_folder is None or categories is None or variables is None:
-        watched_folder, categories, variables = load_config()
+    if watched_folder is None or enable_organization is None or categories is None or variables is None:
+        watched_folder, enable_organization, categories, variables = load_config()
     
     if not watched_folder or watched_folder == "SELECT FOLDER":
         raise ValueError("No watched folder configured. Please set up configuration first.")
@@ -242,12 +254,13 @@ def start_observer(watched_folder: str = None, categories: Dict[str, Dict[str, s
         logger.info(f"Created watched folder: {folder_path}")
 
     # Set up and start the file system observer
-    event_handler = DocumentHandler(watched_folder, categories, variables)
+    event_handler = DocumentHandler(watched_folder, enable_organization, categories, variables)
     observer = Observer()
     observer.schedule(event_handler, str(folder_path), recursive=False)
     observer.start()
     
     logger.info(f"Started monitoring: {folder_path}")
+    logger.info(f"Organization mode: {'enabled' if enable_organization else 'disabled (rename only)'}")
     logger.info(f"Supported extensions: {', '.join(SUPPORTED_EXTENSIONS)}")
     
     return observer
@@ -262,10 +275,10 @@ def main():
     """
     try:
         # Load configuration
-        watched_folder, categories, variables = load_config()
+        watched_folder, enable_organization, categories, variables = load_config()
         
         # Start the monitoring service
-        observer = start_observer(watched_folder, categories, variables)
+        observer = start_observer(watched_folder, enable_organization, categories, variables)
         
         # Keep the process running
         while True:
