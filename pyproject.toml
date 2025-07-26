@@ -1,0 +1,225 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "parafile"
+version = "0.0.2"
+description = "AI-powered file organizer that automatically renames and categorizes documents based on their content"
+readme = "README.md"
+license = {file = "LICENSE"}
+requires-python = ">=3.9"
+authors = [
+    {name = "Parafile Team"},
+]
+keywords = ["ai", "file-organizer", "document-management", "automation"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Office/Business :: Office Suites",
+    "Topic :: Utilities",
+]
+
+dependencies = [
+    "PyPDF2==3.0.1",
+    "python-docx==0.8.11",
+    "watchdog==4.0.1",
+    "python-dotenv==1.0.1",
+    "openai==1.35.13",
+    "Faker==26.0.0",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=7.4.3",
+    "pytest-cov>=4.1.0",
+    "coverage>=7.3.2",
+    "pytest-xdist>=3.0.0",  # for parallel testing
+    "pytest-mock>=3.10.0",  # for better mocking
+]
+dev = [
+    "black>=23.12.1",
+    "flake8>=6.1.0", 
+    "flake8-pyproject>=1.2.0",  # Enable flake8 to read pyproject.toml
+    "isort>=5.13.2",
+    "mypy>=1.8.0",
+]
+security = [
+    "safety>=2.3.5",
+    "bandit>=1.7.5",
+]
+all = [
+    "parafile[test,dev,security]",
+]
+
+[project.urls]
+Repository = "https://github.com/your-org/parafile"
+Issues = "https://github.com/your-org/parafile/issues"
+Documentation = "https://github.com/your-org/parafile#readme"
+
+[project.scripts]
+parafile = "main:main"
+
+# ===== TOOL CONFIGURATIONS =====
+
+[tool.black]
+line-length = 88
+target-version = ['py39', 'py310', 'py311']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+    # directories
+    \.eggs
+    | \.git
+    | \.hg
+    | \.mypy_cache
+    | \.tox
+    | \.venv
+    | _build
+    | buck-out
+    | build
+    | dist
+    | __pycache__
+)/
+'''
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+known_first_party = ["src"]
+known_third_party = ["faker", "openai", "watchdog", "docx", "PyPDF2"]
+sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
+combine_as_imports = true
+force_grid_wrap = 0
+include_trailing_comma = true
+use_parentheses = true
+
+[tool.flake8]
+max-line-length = 88
+extend-ignore = [
+    "E203",  # whitespace before ':'
+    "W503",  # line break before binary operator
+    "E501",  # line too long (handled by black)
+]
+exclude = [
+    ".git",
+    "__pycache__",
+    "build",
+    "dist",
+    ".venv",
+    ".tox",
+    "*.egg-info",
+]
+per-file-ignores = [
+    "__init__.py:F401",  # unused imports in __init__.py
+    "tests/*:F401,F811", # allow unused imports and redefinitions in tests
+]
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+disallow_any_generics = true
+disallow_subclassing_any = true
+disallow_untyped_calls = false  # Start lenient, tighten over time
+disallow_untyped_defs = false
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = false
+no_implicit_optional = true
+warn_no_return = true
+warn_unreachable = true
+ignore_missing_imports = true
+strict_equality = true
+
+# Per-module configuration
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+check_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = "src.test_data_generator"
+ignore_errors = true  # AI generation code can be less strict
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-v",
+    "--strict-markers",
+    "--strict-config",
+    "--tb=short",
+    "--color=yes",
+    "--durations=10",  # Show 10 slowest tests
+]
+markers = [
+    "slow: marks tests as slow (integration tests)",
+    "unit: marks tests as unit tests",
+    "integration: marks tests as integration tests",
+    "ai: marks tests that require AI API calls",
+]
+filterwarnings = [
+    "error",
+    "ignore::UserWarning",
+    "ignore::DeprecationWarning",
+]
+
+[tool.coverage.run]
+source = ["src"]
+branch = true
+omit = [
+    "tests/*",
+    "*/test_*.py",
+    "*/__pycache__/*",
+    "*/.*",
+    "setup.py",
+    "conftest.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "def __str__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if False:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+show_missing = true
+skip_covered = false
+precision = 2
+fail_under = 70  # Start with 70%, increase over time
+
+[tool.coverage.html]
+directory = "htmlcov"
+
+[tool.bandit]
+exclude_dirs = ["tests", "build", "dist"]
+skips = [
+    "B101",  # Skip test assertions
+    "B601",  # Skip shell usage (needed for subprocess)
+]
+
+[tool.bandit.assert_used]
+skips = ["*_test.py", "test_*.py"] 
