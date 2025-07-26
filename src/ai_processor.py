@@ -82,9 +82,17 @@ def categorize_document(
         response_format={
             "type": "json_schema",
             "json_schema": {
-                "reasoning": "string",
-                "confidence": "number",
-                "category": "string",
+                "name": "document_categorization",
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                        "reasoning": {"type": "string"},
+                        "confidence": {"type": "number"},
+                        "category": {"type": "string"},
+                    },
+                    "required": ["reasoning", "confidence", "category"],
+                    "additionalProperties": False
+                }
             },
         },
         max_tokens=256,
@@ -200,9 +208,13 @@ def extract_single_variable(
 
     # Create schema for a single variable
     json_schema = {
-        "type": "object",
-        "properties": {variable_name: {"type": "string"}},
-        "required": [variable_name],
+        "name": "variable_extraction",
+        "schema": {
+            "type": "object",
+            "properties": {variable_name: {"type": "string"}},
+            "required": [variable_name],
+            "additionalProperties": False
+        }
     }
 
     try:
