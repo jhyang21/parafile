@@ -86,38 +86,31 @@
     "variables": [
       {
         "name": "date",
-        "description": "The date of the document in YYYY-MM-DD format.",
-        "type": "date"
+        "description": "The date of the document in YYYY-MM-DD format."
       },
       {
         "name": "company_name",
-        "description": "The legal name of your company.",
-        "type": "company"
+        "description": "The legal name of your company."
       },
       {
         "name": "doc_type",
-        "description": "The specific type of the document (e.g., PitchDeck, PnL, CapTable, MSA).",
-        "type": "document_type"
+        "description": "The specific type of the document (e.g., PitchDeck, PnL, CapTable, MSA)."
       },
       {
         "name": "version",
-        "description": "A version number or identifier (e.g., v1, v2.1, final).",
-        "type": "version"
+        "description": "A version number or identifier (e.g., v1, v2.1, final)."
       },
       {
         "name": "agreement_type",
-        "description": "The type of legal agreement (e.g., NDA, SAFE, Note).",
-        "type": "agreement_type"
+        "description": "The type of legal agreement (e.g., NDA, SAFE, Note)."
       },
       {
         "name": "employee_name",
-        "description": "The full name of an employee or contractor.",
-        "type": "person_name"
+        "description": "The full name of an employee or contractor."
       },
       {
         "name": "report_period",
-        "description": "The reporting period for a financial document or metric (e.g., Q2-2025).",
-        "type": "period"
+        "description": "The reporting period for a financial document or metric (e.g., Q2-2025)."
       }
     ]
   }

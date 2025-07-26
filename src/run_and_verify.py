@@ -73,7 +73,7 @@ class TestVerifier:
         print("Starting file processing...")
         
         # Load configuration
-        _, enable_organization, categories, variables, variable_types = load_config()
+        _, enable_organization, categories, variables = load_config()
         
         if not enable_organization:
             raise TestVerificationError(
@@ -85,8 +85,7 @@ class TestVerifier:
             str(self.test_docs_path), 
             enable_organization, 
             categories, 
-            variables, 
-            variable_types
+            variables
         )
         
         # Process all .docx files

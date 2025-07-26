@@ -41,30 +41,26 @@ class TestConfigManager(unittest.TestCase):
             "variables": [
                 {
                     "name": "date",
-                    "description": "Document date",
-                    "type": "date"
+                    "description": "Document date"
                 },
                 {
                     "name": "company",
-                    "description": "Company name",
-                    "type": "company"
+                    "description": "Company name"
                 },
                 {
                     "name": "type",
-                    "description": "Document type",
-                    "type": "document_type"
+                    "description": "Document type"
                 },
                 {
                     "name": "invoice_id",
                     "description": "Invoice identifier"
-                    # Note: no type field to test backward compatibility
                 }
             ]
         }
 
     def test_transform_config(self):
         """Test the _transform_config function."""
-        watched_folder, enable_org, categories, variables, var_types = _transform_config(self.test_config)
+        watched_folder, enable_org, categories, variables = _transform_config(self.test_config)
         
         # Test returned values
         self.assertEqual(watched_folder, "/test/folder")
@@ -91,26 +87,16 @@ class TestConfigManager(unittest.TestCase):
             "invoice_id": "Invoice identifier"
         }
         self.assertEqual(variables, expected_variables)
-        
-        # Test variable types transformation (with fallback for missing type)
-        expected_types = {
-            "date": "date",
-            "company": "company",
-            "type": "document_type",
-            "invoice_id": "text"  # Default fallback
-        }
-        self.assertEqual(var_types, expected_types)
 
     def test_transform_config_with_defaults(self):
         """Test _transform_config with missing fields."""
         minimal_config = {}
-        watched_folder, enable_org, categories, variables, var_types = _transform_config(minimal_config)
+        watched_folder, enable_org, categories, variables = _transform_config(minimal_config)
         
         self.assertEqual(watched_folder, "SELECT FOLDER")
         self.assertTrue(enable_org)
         self.assertEqual(categories, {})
         self.assertEqual(variables, {})
-        self.assertEqual(var_types, {})
 
     @patch('src.config_manager.CONFIG_FILE')
     def test_save_config(self, mock_config_file):
@@ -136,73 +122,9 @@ class TestConfigManager(unittest.TestCase):
             # Clean up
             temp_path.unlink()
 
-    @patch('src.config_manager.CONFIG_FILE')  
+    @patch('src.config_manager.CONFIG_FILE')
     def test_save_config_from_parts(self, mock_config_file):
         """Test the save_config_from_parts function."""
-        # Create a temporary file
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json') as temp_file:
-            temp_path = Path(temp_file.name)
-        
-        mock_config_file.__str__ = lambda: str(temp_path)
-        mock_config_file.open = temp_path.open
-        
-        try:
-            # Prepare test data
-            categories = {
-                "Reports": {
-                    "description": "Financial reports",
-                    "naming_pattern": "{date}_{type}_report.pdf"
-                }
-            }
-            variables = {"date": "Document date", "type": "Document type"}
-            variable_types = {"date": "date", "type": "document_type"}
-            
-            # Save from parts
-            save_config_from_parts(
-                watched_folder="/test/folder",
-                enable_organization=True,
-                categories=categories,
-                variables=variables,
-                variable_types=variable_types
-            )
-            
-            # Verify it was saved correctly
-            with temp_path.open('r', encoding='utf-8') as f:
-                saved_config = json.load(f)
-            
-            expected_config = {
-                "watched_folder": "/test/folder",
-                "enable_organization": True,
-                "categories": [
-                    {
-                        "name": "Reports",
-                        "description": "Financial reports",
-                        "naming_pattern": "{date}_{type}_report.pdf"
-                    }
-                ],
-                "variables": [
-                    {
-                        "name": "date",
-                        "description": "Document date",
-                        "type": "date"
-                    },
-                    {
-                        "name": "type",
-                        "description": "Document type",
-                        "type": "document_type"
-                    }
-                ]
-            }
-            
-            self.assertEqual(saved_config, expected_config)
-            
-        finally:
-            # Clean up
-            temp_path.unlink()
-
-    @patch('src.config_manager.CONFIG_FILE')
-    def test_save_config_from_parts_without_types(self, mock_config_file):
-        """Test save_config_from_parts without variable types for backward compatibility."""
         # Create a temporary file
         with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json') as temp_file:
             temp_path = Path(temp_file.name)
@@ -220,7 +142,7 @@ class TestConfigManager(unittest.TestCase):
             }
             variables = {"date": "Document date"}
             
-            # Save from parts without variable_types
+            # Save from parts
             save_config_from_parts(
                 watched_folder="/test/folder",
                 enable_organization=True,

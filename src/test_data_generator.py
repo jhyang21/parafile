@@ -89,6 +89,56 @@ class TestDataGenerator:
         generator = type_generators.get(variable_type, type_generators["text"])
         return generator()
 
+    def _infer_variable_type(self, variable_name: str) -> str:
+        """
+        Infer the variable type from the variable name using common patterns.
+        
+        Args:
+            variable_name: The name of the variable to infer the type for
+            
+        Returns:
+            The inferred type string
+        """
+        variable_name_lower = variable_name.lower()
+        
+        # Date/time patterns
+        if any(pattern in variable_name_lower for pattern in ['date', 'year', 'month', 'day', 'time']):
+            if 'year' in variable_name_lower:
+                return "year"
+            elif 'month' in variable_name_lower:
+                return "month"
+            elif 'day' in variable_name_lower:
+                return "day"
+            else:
+                return "date"
+        
+        # Name patterns
+        if any(pattern in variable_name_lower for pattern in ['first_name', 'firstname']):
+            return "first_name"
+        elif any(pattern in variable_name_lower for pattern in ['last_name', 'lastname', 'surname']):
+            return "last_name"
+        elif any(pattern in variable_name_lower for pattern in ['name', 'employee', 'person', 'author']):
+            return "person_name"
+        
+        # Business patterns  
+        if any(pattern in variable_name_lower for pattern in ['company', 'corporation', 'organization', 'org']):
+            return "company"
+        elif any(pattern in variable_name_lower for pattern in ['doc_type', 'document_type', 'type']):
+            return "document_type"
+        elif any(pattern in variable_name_lower for pattern in ['agreement', 'contract']):
+            return "agreement_type"
+        
+        # Technical patterns
+        elif any(pattern in variable_name_lower for pattern in ['version', 'ver', 'v']):
+            return "version"
+        elif any(pattern in variable_name_lower for pattern in ['period', 'quarter', 'q']):
+            return "period"
+        elif any(pattern in variable_name_lower for pattern in ['uuid', 'id']):
+            return "uuid"
+        
+        # Default to text
+        return "text"
+
     def generate_test_document_text(
         self,
         category_name: str,
@@ -136,7 +186,7 @@ class TestDataGenerator:
         Generates a full test suite including documents and a manifest file.
         """
         print("Loading configuration...")
-        _, _, categories, variables, variable_types = load_config()
+        _, _, categories, variables = load_config()
 
         root_path = Path(__file__).resolve().parent.parent
         test_docs_path = root_path / "test_documents"
@@ -164,7 +214,8 @@ class TestDataGenerator:
 
             generated_values = {}
             for var in required_vars:
-                var_type = variable_types.get(var, "text")
+                # Infer variable type from variable name patterns
+                var_type = self._infer_variable_type(var)
                 generated_values[var] = self.generate_value_by_type(var_type, var)
 
             # 2. Construct the expected final filename

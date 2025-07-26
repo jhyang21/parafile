@@ -1,6 +1,6 @@
 # Parafile Testing Framework
 
-This directory contains the comprehensive testing framework for Parafile, implementing the senior developer's recommended multi-layered testing approach.
+This directory contains the comprehensive testing framework for Parafile
 
 ## Testing Architecture
 
