@@ -69,11 +69,11 @@ def categorize_document(document_text: str, categories: Dict[str, Dict[str, str]
         messages=[{"role": "system", "content": system_prompt}, 
                   {"role": "user", "content": user_prompt}],
         response_format={
-            "type": "json_object",
+            "type": "json_schema",
             "json_schema": {
-                "category": "string",
                 "reasoning": "string",
-                "confidence": "number"
+                "confidence": "number",
+                "category": "string"
             }
         },
         max_tokens=256,
@@ -85,6 +85,20 @@ def categorize_document(document_text: str, categories: Dict[str, Dict[str, str]
     
     return response_dict
 
+def get_naming_pattern(category: str, categories: Dict[str, Dict[str, str]]) -> str:
+    """
+    Retrieve the naming pattern from the categories dict given the category name.
+    
+    Args:
+        category: Name of the category to look up
+        categories: Categories dict with name as key, value contains description and naming_pattern
+        
+    Returns:
+        str: The naming pattern for the category, or None if not found
+    """
+    if category in categories:
+        return categories[category]['naming_pattern']
+    return None
 
 def parse_naming_pattern(naming_pattern: str) -> List[str]:
     """
@@ -119,21 +133,76 @@ def parse_naming_pattern(naming_pattern: str) -> List[str]:
     # Return list of variable names (content inside braces)
     return matches
 
+def extract_single_variable(document_text: str, variable_name: str, variables: Dict[str, str], 
+                           category: str, category_description: str, naming_pattern: str) -> str:
+    """
+    Extract a single variable's value from document text using structured output.
 
-def get_naming_pattern(category: str, categories: Dict[str, Dict[str, str]]) -> str:
-    """
-    Retrieve the naming pattern from the categories dict given the category name.
-    
+    This function takes a single variable name and its description,
+    along with document category context, and then calls the OpenAI API 
+    to extract the corresponding value from the provided document text. 
+    It uses JSON schema validation to ensure structured output.
+
     Args:
-        category: Name of the category to look up
-        categories: Categories dict with name as key, value contains description and naming_pattern
-        
+        document_text: The text content of the document to analyze.
+        variable_name: The name of the variable to be extracted.
+        variables: A dictionary where keys are variable names and values
+                   are their descriptions, to help the AI understand
+                   what to look for.
+        category: The document category name for context.
+        category_description: Description of what this category represents.
+        naming_pattern: The naming pattern this variable is part of.
+
     Returns:
-        str: The naming pattern for the category, or None if not found
+        str: The extracted text for the variable. Returns a
+             placeholder value on failure.
     """
-    if category in categories:
-        return categories[category]['naming_pattern']
-    return None
+    variable_description = variables.get(variable_name, f"The {variable_name}")
+    
+    system_prompt = f"""
+    You are a data extraction expert. Your task is to analyze the document text
+    and extract the following piece of information. Return a JSON object
+    that matches the required schema.
+
+    Document Context:
+    - Category: {category}
+    - Category Description: {category_description}
+    - Naming Pattern: {naming_pattern}
+
+    Variable To Extract:
+    - {variable_name}: {variable_description}
+
+    Please extract the specific value for "{variable_name}" that would be 
+    appropriate for this type of document ({category}) and fit well in 
+    the naming pattern: {naming_pattern}
+    """
+    user_prompt = f"Document Text:\n\"\"\"\n{document_text}\n\"\"\""
+    
+    # Create schema for a single variable
+    json_schema = {
+        "type": "object",
+        "properties": {
+            variable_name: {"type": "string"}
+        },
+        "required": [variable_name]
+    }
+    
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o-2024-08-06",
+            messages=[{"role": "system", "content": system_prompt}, 
+                      {"role": "user", "content": user_prompt}],
+            response_format={"type": "json_schema", "json_schema": json_schema},
+            max_tokens=256,
+            temperature=0.2,
+        )
+        response_json = response.choices[0].message.content.strip()
+        extracted_data = json.loads(response_json)
+        return extracted_data.get(variable_name, f"<{variable_name.upper()}>")
+        
+    except (json.JSONDecodeError, Exception):
+        # Fallback to placeholder on any error
+        return f"<{variable_name.upper()}>"
 
 
 def _build_prompt(categories: Dict[str, Dict[str, str]], 
