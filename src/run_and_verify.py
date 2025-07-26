@@ -7,7 +7,6 @@ correct category and renamed to the exact expected filename.
 """
 
 import json
-import os
 import shutil
 import sys
 import time
@@ -16,7 +15,7 @@ from typing import Dict, List
 
 # Use absolute imports for sibling modules
 from src.config_manager import load_config
-from src.organizer import SUPPORTED_EXTENSIONS, DocumentHandler
+from src.organizer import DocumentHandler
 
 
 class TestVerificationError(Exception):

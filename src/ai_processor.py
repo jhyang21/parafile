@@ -14,7 +14,7 @@ variables or .env file as OPENAI_API_KEY.
 import json
 import os
 import re
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 from dotenv import load_dotenv
 from openai import OpenAI

@@ -19,8 +19,6 @@ The application supports two main modes:
    automatically organizes them using AI analysis
 """
 
-from organizer import main as organizer_main
-from gui import main as gui_main
 import os
 import sys
 
@@ -28,6 +26,9 @@ import sys
 # This allows the application to find our custom modules regardless of
 # the current working directory
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
+
+from organizer import main as organizer_main  # noqa: E402
+from gui import main as gui_main  # noqa: E402
 
 
 def main():

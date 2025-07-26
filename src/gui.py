@@ -22,13 +22,12 @@ Key Components:
 - Configuration persistence: Automatic saving and validation
 """
 
-import json
 import subprocess
 import sys
 import tkinter as tk
 from pathlib import Path
-from tkinter import filedialog, messagebox, simpledialog
-from typing import Dict, List
+from tkinter import filedialog, messagebox
+from typing import Dict
 
 from config_manager import load_config, save_config_from_parts
 
