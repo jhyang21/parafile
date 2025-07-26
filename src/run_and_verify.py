@@ -175,7 +175,8 @@ class TestVerifier:
             report_lines.append("- No unexpected files found")
             report_lines.append("- No files left unprocessed")
         else:
-            report_lines.append(f"❌ VERIFICATION FAILED ({len(self.errors)} errors)")
+            report_lines.append(
+                f"❌ VERIFICATION FAILED ({len(self.errors)} errors)")
             report_lines.append("")
             report_lines.append("Errors found:")
             for error in self.errors:

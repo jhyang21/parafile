@@ -124,8 +124,9 @@ class TestDataGenerator:
 
         # Name patterns
         if any(
-            pattern in variable_name_lower for pattern in ["first_name", "firstname"]
-        ):
+            pattern in variable_name_lower for pattern in [
+                "first_name",
+                "firstname"]):
             return "first_name"
         elif any(
             pattern in variable_name_lower
@@ -233,18 +234,21 @@ class TestDataGenerator:
 
             print(f"Generating test case for category: '{name}'...")
 
-            # 1. Generate plausible values for the variables in the naming pattern
+            # 1. Generate plausible values for the variables in the naming
+            # pattern
             naming_pattern = details["naming_pattern"]
             required_vars = parse_naming_pattern(naming_pattern)
 
-            # Skip 'original_name' as it's added by the organizer, not extracted
+            # Skip 'original_name' as it's added by the organizer, not
+            # extracted
             required_vars = [v for v in required_vars if v != "original_name"]
 
             generated_values = {}
             for var in required_vars:
                 # Infer variable type from variable name patterns
                 var_type = self._infer_variable_type(var)
-                generated_values[var] = self.generate_value_by_type(var_type, var)
+                generated_values[var] = self.generate_value_by_type(
+                    var_type, var)
 
             # 2. Construct the expected final filename
             # We handle original_name separately if present

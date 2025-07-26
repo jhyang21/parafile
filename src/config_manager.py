@@ -44,7 +44,8 @@ DEFAULT_CONFIG = {
 }
 
 
-def load_config() -> Tuple[str, bool, Dict[str, Dict[str, str]], Dict[str, str]]:
+def load_config() -> Tuple[str, bool,
+                           Dict[str, Dict[str, str]], Dict[str, str]]:
     """
     Load configuration from the JSON file with validation and auto-repair.
 
@@ -89,7 +90,8 @@ def load_config() -> Tuple[str, bool, Dict[str, Dict[str, str]], Dict[str, str]]
 
     # Ensure the required "General" category exists as fallback
     if "categories" in data:
-        has_general = any(cat.get("name") == "General" for cat in data["categories"])
+        has_general = any(
+            cat.get("name") == "General" for cat in data["categories"])
         if not has_general:
             general_category = {
                 "name": "General",
@@ -99,7 +101,8 @@ def load_config() -> Tuple[str, bool, Dict[str, Dict[str, str]], Dict[str, str]]
             data["categories"].append(general_category)
             updated = True
 
-    # Ensure the required "original_name" variable exists for basic filename preservation
+    # Ensure the required "original_name" variable exists for basic filename
+    # preservation
     if "variables" in data:
         has_original_name = any(
             var.get("name") == "original_name" for var in data["variables"]
@@ -160,7 +163,8 @@ def save_config(config: Dict[str, Any]) -> None:
         RuntimeError: If the file cannot be written (permissions, disk space, etc.)
     """
     try:
-        # Write with formatting for human readability and proper Unicode handling
+        # Write with formatting for human readability and proper Unicode
+        # handling
         with CONFIG_FILE.open("w", encoding="utf-8") as fp:
             json.dump(config, fp, indent=2, ensure_ascii=False)
     except OSError as exc:
@@ -205,4 +209,8 @@ def save_config_from_parts(
     save_config(config)
 
 
-__all__ = ["load_config", "save_config", "save_config_from_parts", "CONFIG_FILE"]
+__all__ = [
+    "load_config",
+    "save_config",
+    "save_config_from_parts",
+    "CONFIG_FILE"]

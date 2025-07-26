@@ -121,9 +121,11 @@ class ConfigGUI(tk.Tk):
         self.folder_entry.pack(side=tk.LEFT, padx=5)
 
         # Browse button for folder selection dialog
-        tk.Button(folder_frame, text="Browse", command=self.browse_folder).pack(
-            side=tk.LEFT
-        )
+        tk.Button(
+            folder_frame,
+            text="Browse",
+            command=self.browse_folder).pack(
+            side=tk.LEFT)
 
         # === ORGANIZATION TOGGLE SECTION ===
         # Frame for organization settings
@@ -145,7 +147,9 @@ class ConfigGUI(tk.Tk):
             org_frame,
             text="(When disabled, files are only renamed, not moved to subfolders)",
             fg="gray",
-            font=("Arial", 8),
+            font=(
+                "Arial",
+                8),
         )
         help_label.pack(side=tk.LEFT, padx=10)
 
@@ -193,9 +197,12 @@ class ConfigGUI(tk.Tk):
         tk.Button(cat_btn_frame, text="Edit", command=self.edit_category).pack(
             side=tk.LEFT, padx=5
         )
-        tk.Button(cat_btn_frame, text="Delete", command=self.delete_category).pack(
-            side=tk.LEFT, padx=5
-        )
+        tk.Button(
+            cat_btn_frame,
+            text="Delete",
+            command=self.delete_category).pack(
+            side=tk.LEFT,
+            padx=5)
 
         # === VARIABLES MANAGEMENT ===
         # Section for variable configuration
@@ -216,9 +223,12 @@ class ConfigGUI(tk.Tk):
         tk.Button(var_btn_frame, text="Edit", command=self.edit_variable).pack(
             side=tk.LEFT, padx=5
         )
-        tk.Button(var_btn_frame, text="Delete", command=self.delete_variable).pack(
-            side=tk.LEFT, padx=5
-        )
+        tk.Button(
+            var_btn_frame,
+            text="Delete",
+            command=self.delete_variable).pack(
+            side=tk.LEFT,
+            padx=5)
 
         # Populate listboxes with current configuration data
         self.refresh_categories()
@@ -316,8 +326,10 @@ class ConfigGUI(tk.Tk):
                 return
 
         try:
-            # Use sys.executable to ensure compatibility with virtual environments
-            main_script_path = Path(__file__).resolve().parent.parent / "main.py"
+            # Use sys.executable to ensure compatibility with virtual
+            # environments
+            main_script_path = Path(
+                __file__).resolve().parent.parent / "main.py"
 
             self.monitor_process = subprocess.Popen(
                 [sys.executable, str(main_script_path), "monitor"]
@@ -328,13 +340,14 @@ class ConfigGUI(tk.Tk):
 
             messagebox.showinfo(
                 "Monitoring Started",
-                f"File monitoring started for folder:\n" f"{self.watched_folder}",
+                f"File monitoring started for folder:\n"
+                f"{self.watched_folder}",
             )
 
         except Exception as e:
             messagebox.showerror(
-                "Failed to Start", f"Could not start the monitoring process:\n{e}"
-            )
+                "Failed to Start",
+                f"Could not start the monitoring process:\n{e}")
             # Reset UI to stopped state
             self.status_label.config(text="Error", fg="red")
             self.monitor_button.config(text="Start Monitoring", bg="green")
@@ -359,7 +372,9 @@ class ConfigGUI(tk.Tk):
         self.monitor_process = None
         self.status_label.config(text="Stopped", fg="red")
         self.monitor_button.config(text="Start Monitoring", bg="green")
-        messagebox.showinfo("Monitoring Stopped", "File monitoring has been stopped.")
+        messagebox.showinfo(
+            "Monitoring Stopped",
+            "File monitoring has been stopped.")
 
     def browse_folder(self):
         """
@@ -380,7 +395,9 @@ class ConfigGUI(tk.Tk):
                 self.categories,
                 self.variables,
             )
-            messagebox.showinfo("Config Saved", "Watched folder saved successfully.")
+            messagebox.showinfo(
+                "Config Saved",
+                "Watched folder saved successfully.")
 
     def on_organization_toggle(self):
         """
@@ -400,8 +417,8 @@ class ConfigGUI(tk.Tk):
 
         status = "enabled" if self.enable_organization else "disabled (rename only)"
         messagebox.showinfo(
-            "Organization Setting Updated", f"File organization is now {status}."
-        )
+            "Organization Setting Updated",
+            f"File organization is now {status}.")
 
     def prompt_folder_selection(self):
         """
@@ -537,7 +554,13 @@ class ConfigGUI(tk.Tk):
         self.show_view(self.form_view_frame)
 
         title = "Edit Category" if cat else "Add Category"
-        tk.Label(self.form_view_frame, text=title, font=("Helvetica", 16)).pack(pady=10)
+        tk.Label(
+            self.form_view_frame,
+            text=title,
+            font=(
+                "Helvetica",
+                16)).pack(
+            pady=10)
 
         # Main container for form fields and variable helper
         editor_frame = tk.Frame(self.form_view_frame)
@@ -548,10 +571,10 @@ class ConfigGUI(tk.Tk):
         form_fields_frame.pack(side=tk.LEFT, fill=tk.Y, anchor=tk.N)
 
         fields = {
-            "name": tk.StringVar(value=cat["name"] if cat else ""),
-            "description": tk.StringVar(value=cat["description"] if cat else ""),
-            "naming_pattern": tk.StringVar(value=cat["naming_pattern"] if cat else ""),
-        }
+            "name": tk.StringVar(
+                value=cat["name"] if cat else ""), "description": tk.StringVar(
+                value=cat["description"] if cat else ""), "naming_pattern": tk.StringVar(
+                value=cat["naming_pattern"] if cat else ""), }
 
         entry_widgets = {}
 
@@ -559,8 +582,15 @@ class ConfigGUI(tk.Tk):
         row = 0
         for label, var in fields.items():
             tk.Label(
-                form_fields_frame, text=label.replace("_", " ").capitalize() + ":"
-            ).grid(row=row, column=0, sticky=tk.W, pady=5)
+                form_fields_frame,
+                text=label.replace(
+                    "_",
+                    " ").capitalize() +
+                ":").grid(
+                row=row,
+                column=0,
+                sticky=tk.W,
+                pady=5)
 
             # Use Text widget for naming pattern (multi-line), Entry for others
             if label == "naming_pattern":
@@ -701,7 +731,8 @@ class ConfigGUI(tk.Tk):
             new_cat = {}
             for label, var in fields.items():
                 if label == "naming_pattern":
-                    new_cat[label] = entry_widgets[label].get("1.0", tk.END).strip()
+                    new_cat[label] = entry_widgets[label].get(
+                        "1.0", tk.END).strip()
                 else:
                     new_cat[label] = var.get()
 
@@ -747,7 +778,12 @@ class ConfigGUI(tk.Tk):
         btn_frame = tk.Frame(self.form_view_frame)
         btn_frame.pack(pady=20)
 
-        tk.Button(btn_frame, text="Save", command=on_save).pack(side=tk.LEFT, padx=10)
+        tk.Button(
+            btn_frame,
+            text="Save",
+            command=on_save).pack(
+            side=tk.LEFT,
+            padx=10)
         tk.Button(btn_frame, text="Cancel", command=self.show_list_view).pack(
             side=tk.LEFT, padx=10
         )
@@ -778,7 +814,9 @@ class ConfigGUI(tk.Tk):
         idx = index[0]
         var_names = list(self.variables.keys())
         current_name = var_names[idx]
-        current = {"name": current_name, "description": self.variables[current_name]}
+        current = {
+            "name": current_name,
+            "description": self.variables[current_name]}
 
         # Prevent editing the required "original_name" variable
         # This variable is essential for basic filename preservation
@@ -850,13 +888,19 @@ class ConfigGUI(tk.Tk):
 
         # Form title based on mode
         title = "Edit Variable" if var else "Add Variable"
-        tk.Label(self.form_view_frame, text=title, font=("Helvetica", 16)).pack(pady=10)
+        tk.Label(
+            self.form_view_frame,
+            text=title,
+            font=(
+                "Helvetica",
+                16)).pack(
+            pady=10)
 
         # Create StringVar objects for form fields
         fields = {
-            "name": tk.StringVar(value=var["name"] if var else ""),
-            "description": tk.StringVar(value=var["description"] if var else ""),
-        }
+            "name": tk.StringVar(
+                value=var["name"] if var else ""), "description": tk.StringVar(
+                value=var["description"] if var else ""), }
 
         # Form fields container
         form_fields_frame = tk.Frame(self.form_view_frame)
@@ -922,7 +966,12 @@ class ConfigGUI(tk.Tk):
         btn_frame = tk.Frame(self.form_view_frame)
         btn_frame.pack(pady=20)
 
-        tk.Button(btn_frame, text="Save", command=on_save).pack(side=tk.LEFT, padx=10)
+        tk.Button(
+            btn_frame,
+            text="Save",
+            command=on_save).pack(
+            side=tk.LEFT,
+            padx=10)
         tk.Button(btn_frame, text="Cancel", command=self.show_list_view).pack(
             side=tk.LEFT, padx=10
         )

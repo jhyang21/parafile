@@ -55,13 +55,13 @@ def categorize_document(
 
     system_prompt = (
         """
-    You are an expert file organization assistant. Your task is to analyze the text 
-    of a document and classify it into one of the user's custom categories based on 
+    You are an expert file organization assistant. Your task is to analyze the text
+    of a document and classify it into one of the user's custom categories based on
     their descriptions.
 
     You must return a JSON object with the following keys:
     - category: The name of the category that the document belongs to
-    - reasoning: A short explanation of why you chose the category  
+    - reasoning: A short explanation of why you chose the category
     - confidence: A number between 0 and 100 that represents how confident you are in your choice
 
     Here are the user's categories and their descriptions:
@@ -105,7 +105,8 @@ def categorize_document(
     return response_dict
 
 
-def get_naming_pattern(category: str, categories: Dict[str, Dict[str, str]]) -> str:
+def get_naming_pattern(
+        category: str, categories: Dict[str, Dict[str, str]]) -> str:
     """
     Retrieve the naming pattern from the categories dict given the category name.
 
@@ -200,8 +201,8 @@ def extract_single_variable(
     Variable To Extract:
     - {variable_name}: {variable_description}
 
-    Please extract the specific value for "{variable_name}" that would be 
-    appropriate for this type of document ({category}) and fit well in 
+    Please extract the specific value for "{variable_name}" that would be
+    appropriate for this type of document ({category}) and fit well in
     the naming pattern: {naming_pattern}
     """
     user_prompt = f'Document Text:\n"""\n{document_text}\n"""'
@@ -281,7 +282,8 @@ def generate_ai_filename(
             )
             extracted_values[var_name] = extracted_value
 
-        # Step 3: Replace all placeholders in the naming pattern with extracted values
+        # Step 3: Replace all placeholders in the naming pattern with extracted
+        # values
         assembled_filename = naming_pattern.format(**extracted_values)
 
         return assembled_filename
@@ -289,7 +291,8 @@ def generate_ai_filename(
     except Exception:
         # Fallback: return pattern with placeholder values if anything fails
         required_variables = parse_naming_pattern(naming_pattern)
-        fallback_values = {var: f"<{var.upper()}>" for var in required_variables}
+        fallback_values = {
+            var: f"<{var.upper()}>" for var in required_variables}
         try:
             return naming_pattern.format(**fallback_values)
         except Exception:

@@ -73,7 +73,10 @@ class TestDocumentHandler(unittest.TestCase):
         """Clean up test fixtures."""
         shutil.rmtree(self.temp_dir)
 
-    def create_test_file(self, filename: str, content: str = "test content") -> Path:
+    def create_test_file(
+            self,
+            filename: str,
+            content: str = "test content") -> Path:
         """Create a test file with the given name and content."""
         file_path = self.temp_dir / filename
         file_path.write_text(content)
@@ -199,7 +202,8 @@ class TestDocumentHandler(unittest.TestCase):
         # Verify file was renamed with conflict resolution
         expected_path = self.temp_dir / "Invoices" / "TechCorp_Invoice_1.pdf"
         self.assertTrue(expected_path.exists())
-        self.assertTrue(existing_file.exists())  # Original file should still exist
+        # Original file should still exist
+        self.assertTrue(existing_file.exists())
         self.assertFalse(test_file.exists())  # Processed file should be moved
 
     @patch("src.organizer.extract_text_from_pdf")

@@ -19,6 +19,8 @@ The application supports two main modes:
    automatically organizes them using AI analysis
 """
 
+from organizer import main as organizer_main
+from gui import main as gui_main
 import os
 import sys
 
@@ -26,9 +28,6 @@ import sys
 # This allows the application to find our custom modules regardless of
 # the current working directory
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
-
-from gui import main as gui_main
-from organizer import main as organizer_main
 
 
 def main():
@@ -59,7 +58,8 @@ def main():
             print("  monitor - Start file monitoring service")
             sys.exit(1)
     else:
-        # This should never happen given the logic above, but included for completeness
+        # This should never happen given the logic above, but included for
+        # completeness
         print("Usage: python main.py [gui|monitor]")
         print("  gui     - Launch the configuration GUI")
         print("  monitor - Start file monitoring")

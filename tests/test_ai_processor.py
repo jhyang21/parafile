@@ -108,7 +108,8 @@ class TestExtractSingleVariable(unittest.TestCase):
         result = extract_single_variable(
             document_text="This is a contract with TechCorp for software services.",
             variable_name="company_name",
-            variables={"company_name": "The name of the company"},
+            variables={
+                "company_name": "The name of the company"},
             category="Contracts",
             category_description="Legal contracts",
             naming_pattern="{company_name}_contract.pdf",
@@ -122,7 +123,8 @@ class TestExtractSingleVariable(unittest.TestCase):
     def test_api_failure_returns_placeholder(self, mock_client):
         """Test that API failures return placeholder values."""
         # Mock an API failure
-        mock_client.chat.completions.create.side_effect = Exception("API Error")
+        mock_client.chat.completions.create.side_effect = Exception(
+            "API Error")
 
         result = extract_single_variable(
             document_text="Some document text",

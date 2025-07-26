@@ -140,7 +140,8 @@ class DocumentHandler(FileSystemEventHandler):
             error handling to prevent crashes from corrupted files or
             temporary access problems.
         """
-        # Retry configuration - files may be temporarily locked after creation/download
+        # Retry configuration - files may be temporarily locked after
+        # creation/download
         max_retries = 3
         retry_delay = 2
 
@@ -172,7 +173,8 @@ class DocumentHandler(FileSystemEventHandler):
                     )
                     suggested_name = "unnamed_file"
                 else:
-                    # Step 3: Generate the AI-powered filename using the naming pattern
+                    # Step 3: Generate the AI-powered filename using the naming
+                    # pattern
                     category_description = self.categories[category]["description"]
                     suggested_name = generate_ai_filename(
                         document_text=document_text,
@@ -190,12 +192,15 @@ class DocumentHandler(FileSystemEventHandler):
                 # Determine destination folder based on organization setting
                 if self.enable_organization:
                     # Organize into category-specific subfolder
-                    destination_folder = ensure_category_folder(base_folder, category)
-                    logger.info(f"Organization enabled: placing in '{category}' folder")
+                    destination_folder = ensure_category_folder(
+                        base_folder, category)
+                    logger.info(
+                        f"Organization enabled: placing in '{category}' folder")
                 else:
                     # Keep in the watched folder, just rename
                     destination_folder = base_folder
-                    logger.info("Organization disabled: keeping in watched folder")
+                    logger.info(
+                        "Organization disabled: keeping in watched folder")
 
                 # Construct new filename, preserving original extension
                 suggested_filename = f"{suggested_name}{filepath.suffix.lower()}"
@@ -234,7 +239,8 @@ class DocumentHandler(FileSystemEventHandler):
                     )
 
             except Exception as exc:
-                # Handle all other errors - don't retry as they're unlikely to resolve
+                # Handle all other errors - don't retry as they're unlikely to
+                # resolve
                 logger.error(f"Failed to process file '{filepath}': {exc}")
                 break
 

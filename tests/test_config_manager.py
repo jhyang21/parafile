@@ -152,7 +152,8 @@ class TestConfigManager(unittest.TestCase):
                 saved_config = json.load(f)
 
             # Should not include type field when not provided
-            expected_variables = [{"name": "date", "description": "Document date"}]
+            expected_variables = [
+                {"name": "date", "description": "Document date"}]
 
             self.assertEqual(saved_config["variables"], expected_variables)
 
