@@ -20,12 +20,22 @@ from dotenv import load_dotenv
 from openai import OpenAI
 
 load_dotenv()
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-if not os.getenv("OPENAI_API_KEY"):
-    raise EnvironmentError(
-        "OPENAI_API_KEY not set. Please configure your environment or .env file."
-    )
+# Lazy initialization to avoid failing during test imports
+_client = None
+
+
+def get_client() -> OpenAI:
+    """Get OpenAI client with lazy initialization."""
+    global _client
+    if _client is None:
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            raise EnvironmentError(
+                "OPENAI_API_KEY not set. Please configure your environment or .env file."
+            )
+        _client = OpenAI(api_key=api_key)
+    return _client
 
 
 def categorize_document(
@@ -73,7 +83,7 @@ def categorize_document(
 
     user_prompt = 'Document Text:\n"""\n' + f'{document_text}\n"""\n\n'
 
-    response = client.chat.completions.create(
+    response = get_client().chat.completions.create(
         model="gpt-4.1-2025-04-14",
         messages=[
             {"role": "system", "content": system_prompt},
@@ -219,7 +229,7 @@ def extract_single_variable(
     }
 
     try:
-        response = client.chat.completions.create(
+        response = get_client().chat.completions.create(
             model="gpt-4o-2024-08-06",
             messages=[
                 {"role": "system", "content": system_prompt},

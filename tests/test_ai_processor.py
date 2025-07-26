@@ -97,12 +97,13 @@ class TestGetNamingPattern(unittest.TestCase):
 class TestExtractSingleVariable(unittest.TestCase):
     """Test the extract_single_variable function with mocking."""
 
-    @patch("src.ai_processor.client")
-    def test_successful_extraction(self, mock_client):
+    @patch("src.ai_processor.get_client")
+    def test_successful_extraction(self, mock_get_client):
         """Test successful variable extraction."""
         # Mock the API response
         mock_response = MagicMock()
         mock_response.choices[0].message.content = '{"company_name": "TechCorp"}'
+        mock_client = mock_get_client.return_value
         mock_client.chat.completions.create.return_value = mock_response
 
         result = extract_single_variable(
@@ -119,10 +120,11 @@ class TestExtractSingleVariable(unittest.TestCase):
         # Verify the API was called
         mock_client.chat.completions.create.assert_called_once()
 
-    @patch("src.ai_processor.client")
-    def test_api_failure_returns_placeholder(self, mock_client):
+    @patch("src.ai_processor.get_client")
+    def test_api_failure_returns_placeholder(self, mock_get_client):
         """Test that API failures return placeholder values."""
         # Mock an API failure
+        mock_client = mock_get_client.return_value
         mock_client.chat.completions.create.side_effect = Exception(
             "API Error")
 
@@ -137,12 +139,13 @@ class TestExtractSingleVariable(unittest.TestCase):
 
         self.assertEqual(result, "<COMPANY_NAME>")
 
-    @patch("src.ai_processor.client")
-    def test_invalid_json_returns_placeholder(self, mock_client):
+    @patch("src.ai_processor.get_client")
+    def test_invalid_json_returns_placeholder(self, mock_get_client):
         """Test that invalid JSON responses return placeholder values."""
         # Mock invalid JSON response
         mock_response = MagicMock()
         mock_response.choices[0].message.content = "invalid json"
+        mock_client = mock_get_client.return_value
         mock_client.chat.completions.create.return_value = mock_response
 
         result = extract_single_variable(
