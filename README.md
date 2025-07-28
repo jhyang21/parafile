@@ -14,10 +14,13 @@ Automatically rename and organize your PDF and Word documents with your naming a
 
 ### 1. Install & Setup
 ```bash
-
 # Clone repository
 git clone https://github.com/jhyang21/parafile.git
 cd parafile
+
+# Create and activate virtual environment
+python3 -m venv venv
+source venv/bin/activate  # On Windows use: venv\Scripts\activate
 
 # Install dependencies
 pip install -r requirements.txt
@@ -29,6 +32,9 @@ cp env.example .env
 
 ### 2. Configure
 ```bash
+# Make sure virtual environment is activated
+source venv/bin/activate  # On Windows use: venv\Scripts\activate
+
 python main.py
 ```
 - Select the folder to be monitored
@@ -38,6 +44,9 @@ python main.py
 
 ### 3. Start Monitoring
 ```bash
+# Make sure virtual environment is activated
+source venv/bin/activate  # On Windows use: venv\Scripts\activate
+
 python main.py monitor
 ```
 Now drop PDF/Word files in your monitored folder and watch them get organized automatically!

@@ -28,6 +28,10 @@ import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog, messagebox
 from typing import Dict
+import threading
+import tempfile
+import os
+import socket
 
 from config_manager import load_config, save_config_from_parts
 
@@ -75,6 +79,7 @@ class ConfigGUI(tk.Tk):
         ) = load_config()
         self.monitor_process: subprocess.Popen | None = None
         self.current_view = None
+        self.is_hidden = False
 
         # Main container for view switching between list and form views
         self.view_container = tk.Frame(self)
@@ -89,6 +94,9 @@ class ConfigGUI(tk.Tk):
 
         # Ensure proper cleanup on window close to prevent orphaned processes
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
+        
+        # Create keyboard shortcut to restore window
+        self.bind_all("<Control-Shift-P>", lambda e: self.restore_window())
 
     def create_list_view(self):
         """
@@ -151,6 +159,29 @@ class ConfigGUI(tk.Tk):
                 8),
         )
         help_label.pack(side=tk.LEFT, padx=10)
+
+        # === BACKGROUND RUNNING SECTION ===
+        # Frame for background running settings
+        bg_frame = tk.Frame(self.list_view_frame)
+        bg_frame.pack(fill=tk.X, pady=5, padx=10)
+
+        # Background running checkbox
+        self.bg_var = tk.BooleanVar(value=False)
+        self.bg_checkbox = tk.Checkbutton(
+            bg_frame,
+            text="Run in background when closed",
+            variable=self.bg_var,
+        )
+        self.bg_checkbox.pack(side=tk.LEFT)
+        
+        # Help text for the background running feature
+        bg_help_label = tk.Label(
+            bg_frame,
+            text="(Monitoring continues when window is closed)",
+            fg="gray",
+            font=("Arial", 8),
+        )
+        bg_help_label.pack(side=tk.LEFT, padx=10)
 
         # === MONITORING CONTROL SECTION ===
         # Frame for monitoring status and controls
@@ -271,14 +302,78 @@ class ConfigGUI(tk.Tk):
         """
         Handle window closing event with proper cleanup.
 
-        Ensures that any running monitoring process is properly terminated
-        before the application exits. This prevents orphaned processes
-        that would continue running after the GUI is closed.
+        Checks if background running is enabled. If so, hides the window
+        instead of closing the application. Otherwise, ensures that any
+        running monitoring process is properly terminated before the
+        application exits.
         """
-        if self.monitor_process and self.monitor_process.poll() is None:
-            self.stop_monitoring()
+        if self.bg_var.get() and self.monitor_process and self.monitor_process.poll() is None:
+            # Hide the window instead of closing when background running is enabled
+            self.withdraw()
+            self.is_hidden = True
+            
+            # Create a small notification window
+            self.create_background_notification()
+        else:
+            # Normal closing behavior - stop monitoring and exit
+            if self.monitor_process and self.monitor_process.poll() is None:
+                self.stop_monitoring()
+            
+            self.destroy()
 
-        self.destroy()
+    def create_background_notification(self):
+        """
+        Create a temporary notification window to inform the user about background mode.
+        """
+        notification = tk.Toplevel(self)
+        notification.title("Background Mode")
+        notification.geometry("400x150")
+        notification.resizable(False, False)
+        
+        # Center the notification window
+        notification.update_idletasks()
+        x = (notification.winfo_screenwidth() - notification.winfo_width()) // 2
+        y = (notification.winfo_screenheight() - notification.winfo_height()) // 2
+        notification.geometry(f"+{x}+{y}")
+        
+        # Add message
+        msg_frame = tk.Frame(notification, padx=20, pady=20)
+        msg_frame.pack(fill=tk.BOTH, expand=True)
+        
+        tk.Label(
+            msg_frame,
+            text="Application Running in Background",
+            font=("Arial", 12, "bold")
+        ).pack()
+        
+        tk.Label(
+            msg_frame,
+            text="The monitoring service will continue running.\n\n"
+                 "To restore the window, use one of these options:\n"
+                 "• Press Ctrl+Shift+P\n"
+                 "• Run 'python main.py gui' again",
+            justify=tk.LEFT
+        ).pack(pady=10)
+        
+        # Add button to restore immediately
+        tk.Button(
+            notification,
+            text="Restore Window Now",
+            command=lambda: [self.restore_window(), notification.destroy()]
+        ).pack(pady=5)
+        
+        # Auto-close notification after 5 seconds
+        notification.after(5000, notification.destroy)
+
+    def restore_window(self):
+        """
+        Restore the main window from hidden state.
+        """
+        if self.is_hidden:
+            self.deiconify()
+            self.is_hidden = False
+            self.lift()
+            self.focus_force()
 
     def toggle_monitoring(self):
         """
@@ -991,6 +1086,37 @@ class ConfigGUI(tk.Tk):
             self.var_listbox.insert(tk.END, var_name)
 
 
+def check_single_instance():
+    """
+    Check if another instance is already running using a socket.
+    
+    Returns:
+        socket.socket or None: The socket if this is the first instance, None otherwise
+    """
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        # Try to bind to a specific port - if it fails, another instance is running
+        sock.bind(('localhost', 52347))  # Random high port number
+        sock.listen(1)
+        return sock
+    except OSError:
+        # Port is already in use, another instance is running
+        return None
+
+def notify_existing_instance():
+    """
+    Try to notify the existing instance to restore its window.
+    """
+    try:
+        # Try to connect to the existing instance
+        client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        client.connect(('localhost', 52347))
+        client.send(b"RESTORE")
+        client.close()
+        return True
+    except:
+        return False
+
 def main():
     """
     Main entry point for the GUI application.
@@ -1002,9 +1128,41 @@ def main():
     The function starts the tkinter main loop, which handles all GUI
     events and user interactions until the application is closed.
     """
+    # Check for existing instance
+    instance_socket = check_single_instance()
+    
+    if instance_socket is None:
+        # Another instance is running
+        if notify_existing_instance():
+            print("Notified existing instance to restore window")
+        else:
+            print("Another instance is already running")
+        sys.exit(0)
+    
     # Create and start the GUI application
     app = ConfigGUI()
-    app.mainloop()
+    
+    # Set up socket listener in a separate thread
+    def listen_for_restore():
+        """Listen for restore requests from other instances."""
+        while True:
+            try:
+                conn, addr = instance_socket.accept()
+                data = conn.recv(1024)
+                if data == b"RESTORE":
+                    app.after(0, app.restore_window)
+                conn.close()
+            except:
+                break
+    
+    listener_thread = threading.Thread(target=listen_for_restore, daemon=True)
+    listener_thread.start()
+    
+    try:
+        app.mainloop()
+    finally:
+        # Clean up the socket
+        instance_socket.close()
 
 
 if __name__ == "__main__":

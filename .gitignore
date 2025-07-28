@@ -1,6 +1,7 @@
 # Ignore test files
 config.json
 .cursor/*
+CLAUDE.md
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
