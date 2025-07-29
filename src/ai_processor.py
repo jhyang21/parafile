@@ -306,8 +306,7 @@ def generate_ai_filename(
             return "unnamed_file"
 
         fallback_values = {
-            var: f"<{var.upper()}>" for var in required_variables
-        }
+            var: f"<{var.upper()}>" for var in required_variables}
         try:
             return naming_pattern.format(**fallback_values)
         except Exception:
