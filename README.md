@@ -83,6 +83,7 @@ Set up rules for how different types of files should be organized.
 ```json
 {
   "monitored_folder": "path/to/your/documents",
+  "enable_organization": true,
   "categories": [
     {
       "name": "Invoices",
