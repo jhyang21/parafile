@@ -44,7 +44,7 @@ class TestParseNamingPattern(unittest.TestCase):
     def test_pattern_with_duplicate_variables(self):
         """Test parsing a pattern with duplicate variables."""
         pattern = "{date}_{date}_{company}.pdf"
-        expected = ["date", "date"]
+        expected = ["date", "date", "company"]
         result = parse_naming_pattern(pattern)
         self.assertEqual(result, expected)
 
