@@ -1,0 +1,56 @@
+{
+  "watched_folder": "SELECT FOLDER",
+  "enable_organization": true,
+  "categories": [
+    {
+      "name": "Invoices",
+      "naming_pattern": "{YYYY}-{MM}-{DD}_{vendor_name}_Invoice",
+      "description": "Invoices received from vendors and suppliers for goods or services rendered."
+    },
+    {
+      "name": "Receipts",
+      "naming_pattern": "{YYYY}-{MM}-{DD}_{vendor_name}_Receipt",
+      "description": "Receipts for business expenses, travel, meals, and other purchases."
+    },
+    {
+      "name": "Bank Statements",
+      "naming_pattern": "{YYYY}-{MM}_Bank_Statement_{bank_name}",
+      "description": "Monthly or quarterly bank and credit card statements."
+    },
+    {
+      "name": "Tax Documents",
+      "naming_pattern": "{YYYY}_{vendor_name}_{tax_form_number}",
+      "description": "Tax-related documents such as W-9 forms, 1099s, and other tax correspondence."
+    }
+  ],
+  "variables": [
+    {
+      "name": "vendor_name",
+      "description": "The name of the company or vendor that issued the document."
+    },
+    {
+      "name": "bank_name",
+      "description": "The name of the bank or financial institution."
+    },
+    {
+      "name": "tax_form_number",
+      "description": "The specific number or name of the tax form, for example 'W-9' or '1099-MISC'."
+    },
+    {
+      "name": "total_amount",
+      "description": "The total monetary amount on the invoice or receipt."
+    },
+    {
+      "name": "YYYY",
+      "description": "The four-digit year from the document's main date."
+    },
+    {
+      "name": "MM",
+      "description": "The two-digit month from the document's main date (e.g., 01 for January)."
+    },
+    {
+      "name": "DD",
+      "description": "The two-digit day from the document's main date."
+    }
+  ]
+} 
