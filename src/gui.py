@@ -95,8 +95,6 @@ class ConfigGUI(tk.Tk):
         # Ensure proper cleanup on window close to prevent orphaned processes
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
         
-        # Create keyboard shortcut to restore window
-        self.bind_all("<Control-Shift-P>", lambda e: self.restore_window())
 
     def create_list_view(self):
         """
@@ -327,7 +325,7 @@ class ConfigGUI(tk.Tk):
         """
         notification = tk.Toplevel(self)
         notification.title("Background Mode")
-        notification.geometry("400x150")
+        notification.geometry("450x200")
         notification.resizable(False, False)
         
         # Center the notification window
@@ -348,22 +346,34 @@ class ConfigGUI(tk.Tk):
         
         tk.Label(
             msg_frame,
-            text="The monitoring service will continue running.\n\n"
-                 "To restore the window, use one of these options:\n"
-                 "• Press Ctrl+Shift+P\n"
-                 "• Run 'python main.py gui' again",
+            text="The monitoring service will continue running in the background.\n\n"
+                 "This window will stay open for easy access.\n"
+                 "Click the button below to restore the main window.",
             justify=tk.LEFT
         ).pack(pady=10)
         
         # Add button to restore immediately
         tk.Button(
             notification,
-            text="Restore Window Now",
-            command=lambda: [self.restore_window(), notification.destroy()]
+            text="Restore Main Window",
+            command=lambda: [self.restore_window(), notification.destroy()],
+            bg="green",
+            fg="white",
+            font=("Arial", 10, "bold")
+        ).pack(pady=10)
+        
+        # Add quit button
+        tk.Button(
+            notification,
+            text="Quit Application",
+            command=lambda: [self.stop_monitoring() if self.monitor_process and self.monitor_process.poll() is None else None, self.destroy()],
+            bg="red",
+            fg="white",
+            font=("Arial", 10)
         ).pack(pady=5)
         
-        # Auto-close notification after 5 seconds
-        notification.after(5000, notification.destroy)
+        # Prevent closing this notification window
+        notification.protocol("WM_DELETE_WINDOW", lambda: None)
 
     def restore_window(self):
         """
