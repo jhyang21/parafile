@@ -1,0 +1,77 @@
+{
+  "watched_folder": "SELECT FOLDER",
+  "enable_organization": true,
+  "categories": [
+    {
+      "name": "Client Invoices",
+      "naming_pattern": "{YYYY}-{MM}-{DD}_{client_name}_Invoice",
+      "description": "Invoices sent to clients for products or services."
+    },
+    {
+      "name": "Vendor Bills & Receipts",
+      "naming_pattern": "{YYYY}-{MM}-{DD}_{vendor_name}_Expense",
+      "description": "Incoming bills, invoices, and receipts from vendors for business expenses."
+    },
+    {
+      "name": "Contracts and Agreements",
+      "naming_pattern": "{agreement_date}_{document_type}_{counterparty_name}",
+      "description": "Signed contracts, agreements, NDAs, and other legal documents with clients, vendors, or partners."
+    },
+    {
+      "name": "HR and Employee Documents",
+      "naming_pattern": "{employee_name}_{document_type}",
+      "description": "Human Resources documents such as employment contracts, resumes, and performance reviews."
+    },
+    {
+      "name": "Marketing Materials",
+      "naming_pattern": "{material_type}_{campaign_name}_{YYYY}",
+      "description": "Marketing and promotional materials like brochures, flyers, and ad creatives."
+    }
+  ],
+  "variables": [
+    {
+      "name": "client_name",
+      "description": "The full name of the client."
+    },
+    {
+      "name": "vendor_name",
+      "description": "The name of the vendor or supplier."
+    },
+    {
+        "name": "counterparty_name",
+        "description": "The name of the other party in a contract or agreement (e.g., client, vendor, partner)."
+    },
+    {
+      "name": "employee_name",
+      "description": "The full name of the employee."
+    },
+    {
+      "name": "document_type",
+      "description": "The specific type of the document, such as 'Invoice', 'Contract', 'NDA', 'Resume'."
+    },
+    {
+        "name": "material_type",
+        "description": "The type of marketing material, like 'Brochure', 'Flyer', or 'Social Media Ad'."
+    },
+    {
+        "name": "campaign_name",
+        "description": "The name of the marketing campaign this material is associated with."
+    },
+    {
+      "name": "agreement_date",
+      "description": "The effective date of a contract or agreement, formatted as YYYY-MM-DD."
+    },
+    {
+      "name": "YYYY",
+      "description": "The four-digit year from the document's main date."
+    },
+    {
+      "name": "MM",
+      "description": "The two-digit month from the document's main date (e.g., 01 for January)."
+    },
+    {
+      "name": "DD",
+      "description": "The two-digit day from the document's main date."
+    }
+  ]
+} 

@@ -1,0 +1,57 @@
+{
+  "watched_folder": "SELECT FOLDER",
+  "enable_organization": true,
+  "categories": [
+    {
+      "name": "Project Proposals",
+      "naming_pattern": "{project_name}_Proposal_{client_name}",
+      "description": "Proposals and statements of work for new or potential projects."
+    },
+    {
+      "name": "Project Plans",
+      "naming_pattern": "{project_name}_Plan_v{version_number}",
+      "description": "Detailed project plans, timelines, Gantt charts, and resource allocation documents."
+    },
+    {
+      "name": "Status Reports",
+      "naming_pattern": "{YYYY}-{MM}-{DD}_{project_name}_Status_Report",
+      "description": "Weekly, bi-weekly, or monthly project status reports and updates."
+    },
+    {
+      "name": "Meeting Notes",
+      "naming_pattern": "{YYYY}-{MM}-{DD}_Meeting_Notes_{project_name}",
+      "description": "Minutes and action items from project-related meetings."
+    },
+    {
+      "name": "Client Deliverables",
+      "naming_pattern": "{project_name}_Deliverable_{YYYY}-{MM}-{DD}",
+      "description": "Final work products and deliverables submitted to the client for review or approval."
+    }
+  ],
+  "variables": [
+    {
+      "name": "project_name",
+      "description": "The official name or identifier of the project."
+    },
+    {
+      "name": "client_name",
+      "description": "The name of the client or primary stakeholder for the project."
+    },
+    {
+        "name": "version_number",
+        "description": "The version number of the document, such as '1.0' or '2.1'."
+    },
+    {
+      "name": "YYYY",
+      "description": "The four-digit year from the document's main date."
+    },
+    {
+      "name": "MM",
+      "description": "The two-digit month from the document's main date (e.g., 01 for January)."
+    },
+    {
+      "name": "DD",
+      "description": "The two-digit day from the document's main date."
+    }
+  ]
+} 

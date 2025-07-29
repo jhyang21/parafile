@@ -19,7 +19,7 @@
     },
     {
       "name": "short_title",
-      "description": "A few keywords from the paper's title to keep it short."
+      "description": "The shotented version of the paper's title to keep it short."
     },
     {
         "name": "long_title",
