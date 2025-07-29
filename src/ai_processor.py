@@ -230,7 +230,7 @@ def extract_single_variable(
 
     try:
         response = get_client().chat.completions.create(
-            model="gpt-4o-2024-08-06",
+            model="gpt-4.1-2025-04-14",
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
@@ -299,10 +299,15 @@ def generate_ai_filename(
         return assembled_filename
 
     except Exception:
-        # Fallback: return pattern with placeholder values if anything fails
-        required_variables = parse_naming_pattern(naming_pattern)
+        # Fallback: try to construct a filename using placeholder values.
+        try:
+            required_variables = parse_naming_pattern(naming_pattern)
+        except Exception:
+            return "unnamed_file"
+
         fallback_values = {
-            var: f"<{var.upper()}>" for var in required_variables}
+            var: f"<{var.upper()}>" for var in required_variables
+        }
         try:
             return naming_pattern.format(**fallback_values)
         except Exception:
