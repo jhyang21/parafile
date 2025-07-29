@@ -37,10 +37,8 @@ python main.py
 - Set naming patterns (e.g., "{date}_{fullname}_invoice")
 
 ### 3. Start Monitoring
-```bash
-python main.py monitor
-```
-Now drop PDF/Word files in your monitored folder and watch them get organized automatically!
+
+Click on the "Start Monitoring" button; Drop PDF/Word files in your monitored folder and watch them get organized automatically!
 
 ## ✨ How It Works
 
