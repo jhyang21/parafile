@@ -14,13 +14,13 @@ Supports both file creation and move events to handle various file
 delivery scenarios.
 """
 
+import hashlib
 import logging
 import shutil
 import time
-import hashlib
 from pathlib import Path
-from typing import Dict, List, Set
 from threading import Lock
+from typing import Dict, List, Set
 
 from watchdog.events import FileCreatedEvent, FileSystemEventHandler
 from watchdog.observers import Observer
@@ -40,15 +40,15 @@ SUPPORTED_EXTENSIONS: List[str] = [".pdf", ".docx"]
 def get_file_hash(filepath: Path) -> str:
     """
     Generate a hash of the file content to uniquely identify files.
-    
+
     Args:
         filepath: Path to the file
-        
+
     Returns:
         str: SHA256 hash of the file content
     """
     try:
-        with open(filepath, 'rb') as f:
+        with open(filepath, "rb") as f:
             # Read file in chunks to handle large files efficiently
             file_hash = hashlib.sha256()
             chunk = f.read(8192)
@@ -131,7 +131,8 @@ class DocumentHandler(FileSystemEventHandler):
         if filepath.suffix.lower() not in SUPPORTED_EXTENSIONS:
             return
 
-        # Skip if we already processed this file content to prevent infinite loops
+        # Skip if we already processed this file content to prevent infinite
+        # loops
         if self._is_already_processed(filepath):
             logger.debug(f"Skipping already processed file: {filepath.name}")
             return
@@ -154,7 +155,8 @@ class DocumentHandler(FileSystemEventHandler):
         if filepath.suffix.lower() not in SUPPORTED_EXTENSIONS:
             return
 
-        # Skip if we already processed this file content to prevent infinite loops
+        # Skip if we already processed this file content to prevent infinite
+        # loops
         if self._is_already_processed(filepath):
             logger.debug(f"Skipping already processed file: {filepath.name}")
             return
@@ -177,7 +179,8 @@ class DocumentHandler(FileSystemEventHandler):
             with self.lock:
                 return file_hash in self.processed_files
         except Exception as e:
-            logger.warning(f"Could not check if file was processed {filepath}: {e}")
+            logger.warning(
+                f"Could not check if file was processed {filepath}: {e}")
             return False
 
     def _mark_as_processed(self, filepath: Path):
@@ -191,14 +194,15 @@ class DocumentHandler(FileSystemEventHandler):
             file_hash = get_file_hash(filepath)
             with self.lock:
                 self.processed_files.add(file_hash)
-                
+
             # Schedule cleanup after 30 seconds to prevent memory buildup
             import threading
+
             def cleanup():
                 time.sleep(30)
                 with self.lock:
                     self.processed_files.discard(file_hash)
-            
+
             threading.Thread(target=cleanup, daemon=True).start()
         except Exception as e:
             logger.warning(f"Could not mark file as processed {filepath}: {e}")
@@ -224,7 +228,7 @@ class DocumentHandler(FileSystemEventHandler):
         """
         # Mark file as processed early to prevent reprocessing during move
         self._mark_as_processed(filepath)
-        
+
         # Retry configuration - files may be temporarily locked after
         # creation/download
         max_retries = 3
@@ -301,10 +305,11 @@ class DocumentHandler(FileSystemEventHandler):
 
                 # Move the file to its new location
                 shutil.move(str(filepath), dest_path)
-                
-                # Mark the destination file as processed to prevent reprocessing
+
+                # Mark the destination file as processed to prevent
+                # reprocessing
                 self._mark_as_processed(dest_path)
-                
+
                 logger.info(
                     f"Moved '{filepath.name}' to "
                     f"'{dest_path.relative_to(base_folder)}'"
@@ -387,7 +392,7 @@ def start_observer(
         )
         observer = Observer()
         observer.schedule(event_handler, str(folder_path), recursive=False)
-        
+
         # Start observer with retry logic
         max_retries = 3
         for attempt in range(max_retries):
@@ -397,7 +402,9 @@ def start_observer(
             except Exception as e:
                 if attempt == max_retries - 1:
                     raise
-                logger.warning(f"Observer start attempt {attempt + 1} failed: {e}. Retrying...")
+                logger.warning(
+                    f"Observer start attempt {attempt + 1} failed: {e}. Retrying..."
+                )
                 time.sleep(1)
 
         logger.info(f"Started monitoring: {folder_path}")
@@ -407,7 +414,7 @@ def start_observer(
         logger.info(f"Supported extensions: {', '.join(SUPPORTED_EXTENSIONS)}")
 
         return observer
-        
+
     except Exception as e:
         logger.error(f"Failed to start observer: {e}")
         raise
@@ -453,7 +460,8 @@ def main():
                 observer.stop()
                 observer.join(timeout=5)  # Wait max 5 seconds for cleanup
             except Exception as cleanup_error:
-                logger.warning(f"Error during observer cleanup: {cleanup_error}")
+                logger.warning(
+                    f"Error during observer cleanup: {cleanup_error}")
 
 
 __all__ = ["start_observer", "SUPPORTED_EXTENSIONS", "main"]

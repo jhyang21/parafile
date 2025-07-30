@@ -707,7 +707,7 @@ class ConfigGUI(tk.Tk):
             Insert a variable string at the current cursor position.
 
             Helper function for inserting variable placeholders and
-            updating syntax highlighting afterwards. If there's a "/" 
+            updating syntax highlighting afterwards. If there's a "/"
             immediately before the cursor (from triggering the popup),
             it will be removed first.
 
@@ -715,17 +715,19 @@ class ConfigGUI(tk.Tk):
                 var_string: The variable placeholder string to insert
             """
             cursor_pos = naming_pattern_entry.index(tk.INSERT)
-            
+
             # Check if there's a "/" just before the cursor position
             # If so, remove it before inserting the variable
             try:
-                char_before_cursor = naming_pattern_entry.get(f"{cursor_pos}-1c", cursor_pos)
+                char_before_cursor = naming_pattern_entry.get(
+                    f"{cursor_pos}-1c", cursor_pos
+                )
                 if char_before_cursor == "/":
                     naming_pattern_entry.delete(f"{cursor_pos}-1c", cursor_pos)
             except tk.TclError:
                 # Handle case where cursor is at the beginning of the text
                 pass
-            
+
             naming_pattern_entry.insert(tk.INSERT, var_string)
             update_tags()
 
