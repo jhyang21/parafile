@@ -17,8 +17,10 @@ delivery scenarios.
 import logging
 import shutil
 import time
+import hashlib
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Set
+from threading import Lock
 
 from watchdog.events import FileCreatedEvent, FileSystemEventHandler
 from watchdog.observers import Observer
@@ -33,6 +35,32 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 SUPPORTED_EXTENSIONS: List[str] = [".pdf", ".docx"]
+
+
+def get_file_hash(filepath: Path) -> str:
+    """
+    Generate a hash of the file content to uniquely identify files.
+    
+    Args:
+        filepath: Path to the file
+        
+    Returns:
+        str: SHA256 hash of the file content
+    """
+    try:
+        with open(filepath, 'rb') as f:
+            # Read file in chunks to handle large files efficiently
+            file_hash = hashlib.sha256()
+            chunk = f.read(8192)
+            while chunk:
+                file_hash.update(chunk)
+                chunk = f.read(8192)
+            return file_hash.hexdigest()
+    except Exception as e:
+        logger.warning(f"Could not hash file {filepath}: {e}")
+        # Fallback to filename + size + mtime
+        stat = filepath.stat()
+        return f"{filepath.name}_{stat.st_size}_{stat.st_mtime}"
 
 
 def ensure_category_folder(base_folder: Path, category_name: str) -> Path:
@@ -84,6 +112,9 @@ class DocumentHandler(FileSystemEventHandler):
         self.enable_organization = enable_organization
         self.categories = categories
         self.variables = variables
+        # Track processed file hashes to prevent infinite loops
+        self.processed_files: Set[str] = set()
+        self.lock = Lock()
 
     def on_created(self, event: FileCreatedEvent):
         """
@@ -98,6 +129,11 @@ class DocumentHandler(FileSystemEventHandler):
 
         filepath = Path(event.src_path)
         if filepath.suffix.lower() not in SUPPORTED_EXTENSIONS:
+            return
+
+        # Skip if we already processed this file content to prevent infinite loops
+        if self._is_already_processed(filepath):
+            logger.debug(f"Skipping already processed file: {filepath.name}")
             return
 
         logger.info(f"New file detected: {filepath.name}")
@@ -118,8 +154,54 @@ class DocumentHandler(FileSystemEventHandler):
         if filepath.suffix.lower() not in SUPPORTED_EXTENSIONS:
             return
 
+        # Skip if we already processed this file content to prevent infinite loops
+        if self._is_already_processed(filepath):
+            logger.debug(f"Skipping already processed file: {filepath.name}")
+            return
+
         logger.info(f"File moved into folder: {filepath.name}")
         self.process_file(filepath)
+
+    def _is_already_processed(self, filepath: Path) -> bool:
+        """
+        Check if a file has been already processed by comparing file content hash.
+
+        Args:
+            filepath: Path to the file to check
+
+        Returns:
+            bool: True if the file was already processed, False otherwise
+        """
+        try:
+            file_hash = get_file_hash(filepath)
+            with self.lock:
+                return file_hash in self.processed_files
+        except Exception as e:
+            logger.warning(f"Could not check if file was processed {filepath}: {e}")
+            return False
+
+    def _mark_as_processed(self, filepath: Path):
+        """
+        Mark a file as processed using its content hash.
+
+        Args:
+            filepath: Path to the file to mark as processed
+        """
+        try:
+            file_hash = get_file_hash(filepath)
+            with self.lock:
+                self.processed_files.add(file_hash)
+                
+            # Schedule cleanup after 30 seconds to prevent memory buildup
+            import threading
+            def cleanup():
+                time.sleep(30)
+                with self.lock:
+                    self.processed_files.discard(file_hash)
+            
+            threading.Thread(target=cleanup, daemon=True).start()
+        except Exception as e:
+            logger.warning(f"Could not mark file as processed {filepath}: {e}")
 
     def process_file(self, filepath: Path):
         """
@@ -140,6 +222,9 @@ class DocumentHandler(FileSystemEventHandler):
             error handling to prevent crashes from corrupted files or
             temporary access problems.
         """
+        # Mark file as processed early to prevent reprocessing during move
+        self._mark_as_processed(filepath)
+        
         # Retry configuration - files may be temporarily locked after
         # creation/download
         max_retries = 3
@@ -214,7 +299,12 @@ class DocumentHandler(FileSystemEventHandler):
                     )
                     counter += 1
 
+                # Move the file to its new location
                 shutil.move(str(filepath), dest_path)
+                
+                # Mark the destination file as processed to prevent reprocessing
+                self._mark_as_processed(dest_path)
+                
                 logger.info(
                     f"Moved '{filepath.name}' to "
                     f"'{dest_path.relative_to(base_folder)}'"
@@ -290,21 +380,37 @@ def start_observer(
         folder_path.mkdir(parents=True, exist_ok=True)
         logger.info(f"Created watched folder: {folder_path}")
 
-    # Set up and start the file system observer
-    event_handler = DocumentHandler(
-        watched_folder, enable_organization, categories, variables
-    )
-    observer = Observer()
-    observer.schedule(event_handler, str(folder_path), recursive=False)
-    observer.start()
+    try:
+        # Set up and start the file system observer with error handling
+        event_handler = DocumentHandler(
+            watched_folder, enable_organization, categories, variables
+        )
+        observer = Observer()
+        observer.schedule(event_handler, str(folder_path), recursive=False)
+        
+        # Start observer with retry logic
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                observer.start()
+                break
+            except Exception as e:
+                if attempt == max_retries - 1:
+                    raise
+                logger.warning(f"Observer start attempt {attempt + 1} failed: {e}. Retrying...")
+                time.sleep(1)
 
-    logger.info(f"Started monitoring: {folder_path}")
-    logger.info(
-        f"Organization mode: {'enabled' if enable_organization else 'disabled (rename only)'}"
-    )
-    logger.info(f"Supported extensions: {', '.join(SUPPORTED_EXTENSIONS)}")
+        logger.info(f"Started monitoring: {folder_path}")
+        logger.info(
+            f"Organization mode: {'enabled' if enable_organization else 'disabled (rename only)'}"
+        )
+        logger.info(f"Supported extensions: {', '.join(SUPPORTED_EXTENSIONS)}")
 
-    return observer
+        return observer
+        
+    except Exception as e:
+        logger.error(f"Failed to start observer: {e}")
+        raise
 
 
 def main():
@@ -314,6 +420,7 @@ def main():
     Loads configuration and starts the file monitoring system. This function
     is called when the organizer is launched in monitor mode from main.py.
     """
+    observer = None
     try:
         # Load configuration
         watched_folder, enable_organization, categories, variables = load_config()
@@ -330,7 +437,8 @@ def main():
     except KeyboardInterrupt:
         # Handle Ctrl+C gracefully
         logger.info("Stopping observer...")
-        observer.stop()
+        if observer:
+            observer.stop()
 
     except Exception as e:
         logger.error(f"Failed to start monitoring: {e}")
@@ -338,8 +446,14 @@ def main():
         print("Please run 'python main.py gui' to configure the application.")
         return
 
-    # Wait for observer thread to finish cleanup
-    observer.join()
+    finally:
+        # Ensure observer is properly stopped and cleaned up
+        if observer:
+            try:
+                observer.stop()
+                observer.join(timeout=5)  # Wait max 5 seconds for cleanup
+            except Exception as cleanup_error:
+                logger.warning(f"Error during observer cleanup: {cleanup_error}")
 
 
 __all__ = ["start_observer", "SUPPORTED_EXTENSIONS", "main"]
